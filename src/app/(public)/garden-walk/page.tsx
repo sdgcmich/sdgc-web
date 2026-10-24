@@ -232,6 +232,102 @@ export default async function GardenWalkPage() {
 
       {/* Highlights Gallery Preview with Lightbox Modal */}
       <GardenWalkGallery photos={FEATURED_GARDEN_WALK_PHOTOS} />
+
+      {/* Visitor Guide & Tour Logistics */}
+      <section className="space-y-6">
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+            Tour Logistics &amp; Etiquette
+          </span>
+          <h2 className="font-serif text-3xl font-bold text-foreground">
+            Visitor Guide &amp; Tips
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Helpful guidelines to ensure a delightful self-guided stroll through our coastal
+            gardens.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-2.5">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+              🎟️
+            </div>
+            <h3 className="font-serif text-base font-bold text-foreground">Wristband Pickup</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Exchange your advance digital ticket confirmation for an official tour wristband and
+              route program at our designated Saugatuck or Douglas welcome station.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-2.5">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+              🌧️
+            </div>
+            <h3 className="font-serif text-base font-bold text-foreground">Rain or Shine</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              The Garden Walk takes place rain or shine. In true Michigan gardening spirit, blooms
+              glisten after a coastal shower! Bring an umbrella and comfortable walking shoes.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-2.5">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+              🚶
+            </div>
+            <h3 className="font-serif text-base font-bold text-foreground">Terrain &amp; Access</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Private coastal properties feature stone paths, gentle hills, and flagstone steps.
+              Comfortable footwear is recommended; some garden areas may not accommodate strollers.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-2.5">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+              📸
+            </div>
+            <h3 className="font-serif text-base font-bold text-foreground">Garden Etiquette</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Personal photography is encouraged. Please stay on marked paths, respect homeowner
+              privacy, and kindly leave pets at home (registered service animals are welcome).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Host a Garden or Volunteer CTA Card */}
+      <section className="rounded-3xl border border-primary/20 bg-gradient-to-br from-card via-card to-primary/10 p-8 sm:p-10 shadow-sm">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center md:text-left max-w-xl">
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Community Involvement
+            </span>
+            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+              Showcase Your Garden or Volunteer on the Walk
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Do you have a unique woodland retreat, cottage perennial haven, or native pollinator
+              haven you&apos;d love to share on a future tour? Or would you enjoy greeting visitors
+              as a friendly garden docent? We would love to hear from you!
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+            <Link
+              href={"/contact" as Route}
+              className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
+            >
+              Get In Touch &rarr;
+            </Link>
+            <Link
+              href={"/join" as Route}
+              className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+            >
+              Join the Club
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

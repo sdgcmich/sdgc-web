@@ -26,6 +26,7 @@ export interface SiteHeaderProps {
   initialUser?: {
     email: string;
     isStaff: boolean;
+    roleName?: string;
   } | null;
 }
 
@@ -36,6 +37,7 @@ export function SiteHeader({ initialUser }: SiteHeaderProps = {}) {
   const [currentUser, setCurrentUser] = React.useState<{
     email: string;
     isStaff: boolean;
+    roleName?: string;
   } | null>(initialUser ?? null);
   const toggleRef = React.useRef<HTMLButtonElement>(null);
 
@@ -51,9 +53,19 @@ export function SiteHeader({ initialUser }: SiteHeaderProps = {}) {
           .select("role")
           .eq("user_id", user.id);
         const roles = (userRoles || []).map((r) => r.role);
+        const isStaff = roles.some((r) => ["admin", "editor", "treasurer"].includes(r));
+        let roleName = "Member";
+        if (roles.includes("admin")) {
+          roleName = "Admin";
+        } else if (roles.includes("treasurer")) {
+          roleName = "Treasurer";
+        } else if (roles.includes("editor")) {
+          roleName = "Editor";
+        }
         setCurrentUser({
           email: user.email || "",
-          isStaff: roles.some((r) => ["admin", "editor", "treasurer"].includes(r)),
+          isStaff,
+          roleName,
         });
       } else {
         setCurrentUser(null);
@@ -122,12 +134,15 @@ export function SiteHeader({ initialUser }: SiteHeaderProps = {}) {
         >
           {NAV_LINKS.map((link) => {
             const isActive = pathname === link.href;
+            const isHome = link.href === "/";
             return (
               <Link
                 key={link.href}
                 href={link.href as Route}
                 aria-current={isActive ? "page" : undefined}
                 className={`inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors whitespace-nowrap ${
+                  isHome ? "hidden xl:inline-flex" : ""
+                } ${
                   isActive
                     ? "bg-primary/10 text-primary font-semibold"
                     : "text-foreground/80 hover:text-foreground hover:bg-muted"
@@ -144,29 +159,12 @@ export function SiteHeader({ initialUser }: SiteHeaderProps = {}) {
           <ThemeToggle />
           {currentUser ? (
             <div className="flex items-center gap-2">
-              {currentUser.isStaff ? (
-                <>
-                  <Link
-                    href="/admin"
-                    className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 whitespace-nowrap"
-                  >
-                    Admin
-                  </Link>
-                  <Link
-                    href="/admin/settings/profile"
-                    className="inline-flex h-9 items-center justify-center rounded-lg border border-border/80 bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted whitespace-nowrap"
-                  >
-                    Profile
-                  </Link>
-                </>
-              ) : (
-                <Link
-                  href="/profile"
-                  className="inline-flex h-9 items-center justify-center rounded-lg border border-border/80 bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted whitespace-nowrap"
-                >
-                  Profile
-                </Link>
-              )}
+              <Link
+                href={currentUser.isStaff ? "/admin" : "/profile"}
+                className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-3.5 text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 whitespace-nowrap"
+              >
+                {currentUser.roleName || (currentUser.isStaff ? "Admin" : "Member")}
+              </Link>
               <form action={logoutAction} className="inline-flex">
                 <button
                   type="submit"

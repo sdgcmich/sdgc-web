@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireCapability } from "@/features/auth/authorization";
 import type { ActionResult } from "@/features/auth/types";
+import type { Json } from "@/types/database";
 import { type NoticeCategory, type NoticePriority, slugifyNoticeTitle } from "./types";
 
 // uses slugifyNoticeTitle from types
@@ -39,6 +40,25 @@ export async function createNoticeAction(
 
   const finalSlug = rawSlug ? slugifyNoticeTitle(rawSlug) : slugifyNoticeTitle(title);
 
+  const attachmentsRaw = formData.get("attachments") as string | null;
+  let attachments: NonNullable<Json> = [];
+  if (attachmentsRaw) {
+    try {
+      const parsed = JSON.parse(attachmentsRaw);
+      if (Array.isArray(parsed)) {
+        attachments = parsed.filter(
+          (a) =>
+            typeof a === "object" &&
+            a !== null &&
+            typeof a.url === "string" &&
+            a.url.trim().length > 0,
+        ) as NonNullable<Json>;
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("notices")
@@ -51,6 +71,7 @@ export async function createNoticeAction(
       priority,
       is_pinned: isPinned,
       is_published: isPublished,
+      attachments,
       author_id: user.id,
       published_at: new Date().toISOString(),
     })
@@ -109,6 +130,25 @@ export async function updateNoticeAction(
 
   const finalSlug = rawSlug ? slugifyNoticeTitle(rawSlug) : slugifyNoticeTitle(title);
 
+  const attachmentsRaw = formData.get("attachments") as string | null;
+  let attachments: NonNullable<Json> = [];
+  if (attachmentsRaw) {
+    try {
+      const parsed = JSON.parse(attachmentsRaw);
+      if (Array.isArray(parsed)) {
+        attachments = parsed.filter(
+          (a) =>
+            typeof a === "object" &&
+            a !== null &&
+            typeof a.url === "string" &&
+            a.url.trim().length > 0,
+        ) as NonNullable<Json>;
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("notices")
@@ -121,6 +161,7 @@ export async function updateNoticeAction(
       priority,
       is_pinned: isPinned,
       is_published: isPublished,
+      attachments,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

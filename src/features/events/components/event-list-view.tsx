@@ -24,6 +24,31 @@ const STANDARD_CATEGORIES = [
   "Garden Walk",
 ];
 
+function getCategoryBadge(category?: string) {
+  if (!category) return null;
+  const lower = category.toLowerCase();
+  let colorClasses = "bg-primary/10 text-primary border-primary/20";
+  if (lower.includes("garden walk")) {
+    colorClasses = "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30";
+  } else if (lower.includes("workshop") || lower.includes("presentation")) {
+    colorClasses = "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30";
+  } else if (lower.includes("community") || lower.includes("project")) {
+    colorClasses = "bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-500/30";
+  } else if (lower.includes("social") || lower.includes("special")) {
+    colorClasses = "bg-purple-500/15 text-purple-800 dark:text-purple-300 border-purple-500/30";
+  } else if (lower.includes("business")) {
+    colorClasses = "bg-muted text-muted-foreground border-border/80";
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${colorClasses}`}
+    >
+      {category}
+    </span>
+  );
+}
+
 export function EventListView({
   events,
   error,
@@ -145,7 +170,7 @@ export function EventListView({
             {upcomingEvents.map((event) => (
               <article key={event.id} className="p-6 transition-colors hover:bg-muted/40">
                 <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-serif text-xl font-semibold text-primary">
                       <Link
                         href={`/event/${event.slug}`}
@@ -154,7 +179,7 @@ export function EventListView({
                         {event.title}
                       </Link>
                     </h3>
-                    {event.category && <Badge variant="secondary">{event.category}</Badge>}
+                    {getCategoryBadge(event.category)}
                   </div>
                   <time dateTime={event.startsAt} className="text-sm font-medium text-foreground">
                     {formatEventDateTime(event.startsAt)}
@@ -191,12 +216,34 @@ export function EventListView({
                   </div>
 
                   <div className="flex items-center space-x-3">
+                    <a
+                      href={`/event/${event.slug}/ics`}
+                      download={`${event.slug}.ics`}
+                      className="font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                      title="Add to calendar (.ics)"
+                    >
+                      <svg
+                        className="h-3.5 w-3.5 text-primary"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth="2"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                        />
+                      </svg>
+                      <span>Add to Calendar</span>
+                    </a>
                     {event.ticketUrl && (
                       <Link
                         href={event.ticketUrl as Route}
                         className="font-medium text-primary hover:underline"
                       >
-                        Tickets & RSVP &rarr;
+                        Tickets &amp; RSVP &rarr;
                       </Link>
                     )}
                     <Link

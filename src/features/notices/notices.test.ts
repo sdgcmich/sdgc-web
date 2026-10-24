@@ -7,6 +7,7 @@ import {
   slugifyNoticeTitle,
   isValidNoticeCategory,
   isValidNoticePriority,
+  detectAttachmentType,
   type NoticeCategory,
   type NoticePriority,
 } from "./types";
@@ -64,6 +65,34 @@ describe("notices helpers and validation", () => {
     });
   });
 
+  describe("detectAttachmentType", () => {
+    it("identifies PDF files correctly", () => {
+      expect(detectAttachmentType("https://example.com/minutes.pdf")).toBe("pdf");
+      expect(detectAttachmentType("/uploads/application-form.PDF")).toBe("pdf");
+    });
+
+    it("identifies image files correctly", () => {
+      expect(detectAttachmentType("https://example.com/garden-map.jpg")).toBe("image");
+      expect(detectAttachmentType("photo.jpeg")).toBe("image");
+      expect(detectAttachmentType("banner.png")).toBe("image");
+      expect(detectAttachmentType("scheme.webp")).toBe("image");
+      expect(detectAttachmentType("animation.gif")).toBe("image");
+    });
+
+    it("identifies documents and spreadsheets correctly", () => {
+      expect(detectAttachmentType("bylaws.doc")).toBe("doc");
+      expect(detectAttachmentType("minutes.docx")).toBe("doc");
+      expect(detectAttachmentType("budget.xls")).toBe("doc");
+      expect(detectAttachmentType("roster.xlsx")).toBe("doc");
+      expect(detectAttachmentType("survey.csv")).toBe("doc");
+    });
+
+    it("defaults to other for unspecified extensions", () => {
+      expect(detectAttachmentType("archive.zip")).toBe("other");
+      expect(detectAttachmentType("https://external-link.org")).toBe("other");
+    });
+  });
+
   describe("NoticeDetail component markdown rendering", () => {
     it("renders formatted headings, bold text, bullet lists, and links instead of raw tags", () => {
       const notice: Notice = {
@@ -88,6 +117,18 @@ To volunteer, contact us via the [Contact Page](/contact).`,
         updatedAt: "2026-10-22T10:00:00Z",
         authorId: "author-1",
         authorName: "Club Officers",
+        attachments: [
+          {
+            name: "Volunteer Handbook 2027",
+            url: "https://example.com/volunteer-handbook.pdf",
+            type: "pdf",
+          },
+          {
+            name: "Route Map Overview",
+            url: "https://example.com/route-map.jpg",
+            type: "image",
+          },
+        ],
       };
 
       const html = renderToStaticMarkup(React.createElement(NoticeDetail, { notice }));
@@ -114,6 +155,15 @@ To volunteer, contact us via the [Contact Page](/contact).`,
       expect(html).not.toContain("**47th");
       expect(html).not.toContain("### Volunteer");
       expect(html).not.toContain("[Contact Page](/contact)");
+
+      // Verify attachments are rendered
+      expect(html).toContain("Attached Documents &amp; Files");
+      expect(html).toContain("Volunteer Handbook 2027");
+      expect(html).toContain("Route Map Overview");
+      expect(html).toContain('href="https://example.com/volunteer-handbook.pdf"');
+      expect(html).toContain('href="https://example.com/route-map.jpg"');
+      expect(html).toContain("PDF");
+      expect(html).toContain("IMG");
     });
   });
 });

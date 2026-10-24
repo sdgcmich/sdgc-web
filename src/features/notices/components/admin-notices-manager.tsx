@@ -7,7 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MarkdownContent } from "@/components/ui/markdown-content";
-import type { Notice, NoticeCategory, NoticePriority } from "../types";
+import {
+  type AttachmentType,
+  type Notice,
+  type NoticeAttachment,
+  type NoticeCategory,
+  type NoticePriority,
+  detectAttachmentType,
+} from "../types";
 import {
   createNoticeAction,
   updateNoticeAction,
@@ -40,6 +47,10 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
   const [isPinned, setIsPinned] = React.useState(false);
   const [isPublished, setIsPublished] = React.useState(true);
   const [previewTab, setPreviewTab] = React.useState<"edit" | "preview">("edit");
+  const [attachments, setAttachments] = React.useState<NoticeAttachment[]>([]);
+  const [newAttachName, setNewAttachName] = React.useState("");
+  const [newAttachUrl, setNewAttachUrl] = React.useState("");
+  const [newAttachType, setNewAttachType] = React.useState<AttachmentType>("pdf");
   const [formError, setFormError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -58,6 +69,10 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
     setContent("");
     setIsPinned(false);
     setIsPublished(true);
+    setAttachments([]);
+    setNewAttachName("");
+    setNewAttachUrl("");
+    setNewAttachType("pdf");
     setFormError(null);
     setPreviewTab("edit");
     setIsModalOpen(true);
@@ -73,9 +88,31 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
     setContent(notice.content);
     setIsPinned(notice.isPinned);
     setIsPublished(notice.isPublished);
+    setAttachments(notice.attachments || []);
+    setNewAttachName("");
+    setNewAttachUrl("");
+    setNewAttachType("pdf");
     setFormError(null);
     setPreviewTab("edit");
     setIsModalOpen(true);
+  };
+
+  const handleAddAttachment = () => {
+    if (!newAttachUrl.trim()) return;
+    const finalType = newAttachType || detectAttachmentType(newAttachName || newAttachUrl);
+    const newAttach: NoticeAttachment = {
+      name: newAttachName.trim() || "Attached File",
+      url: newAttachUrl.trim(),
+      type: finalType,
+    };
+    setAttachments((prev) => [...prev, newAttach]);
+    setNewAttachName("");
+    setNewAttachUrl("");
+    setNewAttachType("pdf");
+  };
+
+  const handleRemoveAttachment = (indexToRemove: number) => {
+    setAttachments((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const handleTitleChange = (val: string) => {
@@ -107,6 +144,7 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
       formData.append("content", content);
       formData.append("isPinned", String(isPinned));
       formData.append("isPublished", String(isPublished));
+      formData.append("attachments", JSON.stringify(attachments));
 
       const res = editingNotice
         ? await updateNoticeAction(formData)
@@ -531,6 +569,108 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
                     )}
                   </div>
                 )}
+              </div>
+
+              {/* Attachments Section */}
+              <div className="space-y-3 rounded-2xl border border-border/80 bg-muted/20 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-xs font-bold text-foreground">
+                      Attachments (PDFs, Images, Documents)
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Attach downloadable files, event maps, or meeting minutes.
+                    </p>
+                  </div>
+                  {attachments.length > 0 && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                      {attachments.length} {attachments.length === 1 ? "file" : "files"}
+                    </span>
+                  )}
+                </div>
+
+                {/* List of existing attachments */}
+                {attachments.length > 0 && (
+                  <div className="space-y-2">
+                    {attachments.map((att, idx) => (
+                      <div
+                        key={att.url}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-2.5 text-xs"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                            {att.type || "file"}
+                          </span>
+                          <div className="min-w-0 truncate">
+                            <p className="font-semibold text-foreground truncate">{att.name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{att.url}</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAttachment(idx)}
+                          className="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add new attachment row */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-1 border-t border-border/60">
+                  <div className="sm:col-span-5">
+                    <Input
+                      placeholder="File title (e.g. Garden Tour Map.pdf)"
+                      value={newAttachName}
+                      onChange={(e) => setNewAttachName(e.target.value)}
+                      className="text-xs h-8"
+                    />
+                  </div>
+                  <div className="sm:col-span-4">
+                    <Input
+                      placeholder="URL or file link (https://...)"
+                      value={newAttachUrl}
+                      onChange={(e) => {
+                        setNewAttachUrl(e.target.value);
+                        if (!newAttachName) {
+                          const parts = e.target.value.split("/");
+                          const last = parts[parts.length - 1];
+                          if (last?.includes(".")) {
+                            setNewAttachName(decodeURIComponent(last));
+                          }
+                        }
+                      }}
+                      className="text-xs h-8"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <select
+                      value={newAttachType}
+                      onChange={(e) => setNewAttachType(e.target.value as AttachmentType)}
+                      aria-label="File format"
+                      className="w-full h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="pdf">PDF</option>
+                      <option value="image">Image</option>
+                      <option value="doc">Document</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-1 flex items-center">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddAttachment}
+                      disabled={!newAttachUrl.trim()}
+                      className="w-full h-8 text-xs font-semibold px-2"
+                    >
+                      + Add
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               {/* Toggles */}

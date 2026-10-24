@@ -1,7 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import {
+  type AttachmentType,
   type Notice,
+  type NoticeAttachment,
   type NoticeCategory,
+  detectAttachmentType,
   isValidNoticeCategory,
   isValidNoticePriority,
 } from "./types";
@@ -19,6 +22,7 @@ interface NoticeDbRow {
   published_at: string | null;
   expires_at: string | null;
   author_id: string | null;
+  attachments?: unknown;
   created_at: string;
   updated_at: string;
   profiles?:
@@ -32,6 +36,25 @@ function mapNoticeRow(row: NoticeDbRow): Notice {
   const authorName = authorProfile
     ? `${authorProfile.first_name || ""} ${authorProfile.last_name || ""}`.trim()
     : null;
+
+  let attachments: NoticeAttachment[] = [];
+  if (Array.isArray(row.attachments)) {
+    attachments = row.attachments
+      .filter(
+        (a): a is Record<string, unknown> =>
+          typeof a === "object" && a !== null && typeof (a as { url?: unknown }).url === "string",
+      )
+      .map((a) => {
+        const url = (a.url as string).trim();
+        const name = typeof a.name === "string" && a.name.trim() ? a.name.trim() : "Attachment";
+        const type =
+          typeof a.type === "string"
+            ? (a.type as AttachmentType)
+            : detectAttachmentType(name || url);
+        const sizeBytes = typeof a.sizeBytes === "number" ? a.sizeBytes : undefined;
+        return { name, url, type, sizeBytes };
+      });
+  }
 
   return {
     id: row.id,
@@ -47,6 +70,7 @@ function mapNoticeRow(row: NoticeDbRow): Notice {
     expiresAt: row.expires_at,
     authorId: row.author_id,
     authorName,
+    attachments,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -75,6 +99,7 @@ export async function getPublishedNotices(category?: NoticeCategory): Promise<No
       published_at,
       expires_at,
       author_id,
+      attachments,
       created_at,
       updated_at
     `,
@@ -119,6 +144,7 @@ export async function getNoticeBySlug(slug: string): Promise<Notice | null> {
       published_at,
       expires_at,
       author_id,
+      attachments,
       created_at,
       updated_at
     `,
@@ -155,6 +181,7 @@ export async function getAllNoticesAdmin(): Promise<Notice[]> {
       published_at,
       expires_at,
       author_id,
+      attachments,
       created_at,
       updated_at,
       profiles:author_id (

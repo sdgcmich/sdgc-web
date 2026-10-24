@@ -181,6 +181,28 @@ export function NoticeBoard({ initialNotices }: NoticeBoardProps) {
                       <span className="text-[11px] font-bold text-primary uppercase tracking-wider">
                         ★ Pinned
                       </span>
+                      {notice.attachments && notice.attachments.length > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          <svg
+                            aria-hidden="true"
+                            className="h-3 w-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="2"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.37l-9.4 9.401a1.5 1.5 0 11-2.122-2.122l8.03-8.03"
+                            />
+                          </svg>
+                          <span>
+                            {notice.attachments.length}{" "}
+                            {notice.attachments.length === 1 ? "file" : "files"}
+                          </span>
+                        </span>
+                      )}
                     </div>
                     <time className="text-[11px] text-muted-foreground font-mono">
                       {new Date(notice.publishedAt).toLocaleDateString("en-US", {
@@ -269,7 +291,31 @@ export function NoticeBoard({ initialNotices }: NoticeBoardProps) {
               >
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    {getCategoryBadge(notice.category)}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {getCategoryBadge(notice.category)}
+                      {notice.attachments && notice.attachments.length > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          <svg
+                            aria-hidden="true"
+                            className="h-3 w-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="2"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.37l-9.4 9.401a1.5 1.5 0 11-2.122-2.122l8.03-8.03"
+                            />
+                          </svg>
+                          <span>
+                            {notice.attachments.length}{" "}
+                            {notice.attachments.length === 1 ? "file" : "files"}
+                          </span>
+                        </span>
+                      )}
+                    </div>
                     <time className="text-[11px] text-muted-foreground font-mono">
                       {new Date(notice.publishedAt).toLocaleDateString("en-US", {
                         month: "short",
