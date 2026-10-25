@@ -338,6 +338,38 @@ isOneToOne: false
                   Relationships: [
 
                   ]
+                },"ticket_orders": {
+                  Row: {
+                    "checked_in_at": string | null,"checked_in_by": string | null,"created_at": string,"event_id": string | null,"id": string,"notes": string | null,"order_reference": string,"purchaser_email": string,"purchaser_name": string,"purchaser_phone": string | null,"status": string,"ticket_quantity": number,"total_amount_cents": number,"unit_price_cents": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"event_id"?: string | null,"id"?: string,"notes"?: string | null,"order_reference": string,"purchaser_email": string,"purchaser_name": string,"purchaser_phone"?: string | null,"status"?: string,"ticket_quantity": number,"total_amount_cents": number,"unit_price_cents"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"event_id"?: string | null,"id"?: string,"notes"?: string | null,"order_reference"?: string,"purchaser_email"?: string,"purchaser_name"?: string,"purchaser_phone"?: string | null,"status"?: string,"ticket_quantity"?: number,"total_amount_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ticket_orders_checked_in_by_fkey"
+      columns: ["checked_in_by"]
+isOneToOne: false
+      referencedRelation: "member_directory"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ticket_orders_checked_in_by_fkey"
+      columns: ["checked_in_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ticket_orders_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"user_roles": {
                   Row: {
                     "created_at": string,"granted_by": string | null,"role": string,"user_id": string
