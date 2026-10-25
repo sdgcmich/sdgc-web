@@ -72,10 +72,12 @@ export default async function PrivacyPolicyPage() {
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 space-y-12">
       {/* Header */}
       <div className="space-y-4 text-center sm:text-left border-b border-border/60 pb-8">
-        <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary tracking-wide uppercase">
           Member Data &amp; Trust
-        </span>
-        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground">{title}</h1>
+        </div>
+        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
+          {title}
+        </h1>
         <p className="text-sm text-muted-foreground">
           Last revised: {lastUpdated} &bull; Saugatuck Douglas Garden Club (501(c)(3) Nonprofit)
         </p>

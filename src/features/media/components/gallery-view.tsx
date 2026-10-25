@@ -105,9 +105,9 @@ export function GalleryView({ albums, media }: GalleryViewProps) {
           {/* Left Text & Stats Column */}
           <div className="lg:col-span-7 space-y-6">
             <div className="space-y-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-                SDGC GALLERY ARCHIVE
-              </span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary uppercase tracking-wide">
+                SDGC Gallery Archive
+              </div>
               <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground leading-[1.15]">
                 Club Photo Gallery
               </h1>

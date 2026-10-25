@@ -20,10 +20,12 @@ export default async function AboutPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 space-y-12">
       <div className="space-y-4 text-center max-w-3xl mx-auto">
-        <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary tracking-wide uppercase">
           Dedicated Since 1928
-        </span>
-        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground">{about.title}</h1>
+        </div>
+        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
+          {about.title}
+        </h1>
         <p className="text-lg text-muted-foreground leading-relaxed">{about.subtitle}</p>
       </div>
 
@@ -33,7 +35,7 @@ export default async function AboutPage() {
           return (
             <article
               key={section.id}
-              className="rounded-2xl border border-border bg-card p-6 sm:p-10 shadow-xs"
+              className="rounded-3xl border border-border bg-card p-6 sm:p-10 shadow-xs"
             >
               <div
                 className={`flex flex-col ${section.image ? "lg:grid lg:grid-cols-12 lg:gap-8 items-center" : "space-y-4"}`}

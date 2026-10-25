@@ -36,16 +36,18 @@ export default async function EventsDayPage(props: EventsDayPageProps) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 space-y-8">
-      <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-          Day View
-        </span>
-        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground">
-          Event Daily Schedule
-        </h1>
-        <p className="mt-2 text-base text-muted-foreground">
-          View all club activities scheduled for a specific date in America/Detroit time.
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-border/60 pb-6">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary tracking-wide uppercase mb-2">
+            Daily Schedule
+          </div>
+          <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
+            Event Daily Schedule
+          </h1>
+          <p className="mt-2 text-base text-muted-foreground">
+            View all club activities scheduled for a specific date in America/Detroit time.
+          </p>
+        </div>
       </div>
 
       <EventViewSelector currentView="day" />

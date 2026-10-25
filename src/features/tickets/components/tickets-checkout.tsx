@@ -271,7 +271,7 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
 
       {/* Hero Header */}
       <div className="space-y-3 max-w-2xl">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary tracking-wide uppercase">
           Official Advance Tour Passes
         </div>
         <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight">

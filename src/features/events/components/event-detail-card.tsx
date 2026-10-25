@@ -15,29 +15,26 @@ interface EventDetailCardProps {
 export function EventDetailCard({ event, prevEvent, nextEvent }: EventDetailCardProps) {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
-      {/* Navigation Breadcrumb */}
-      <nav
-        aria-label="Breadcrumb"
-        className="text-xs text-muted-foreground flex items-center space-x-2"
-      >
-        <Link href="/events" className="hover:text-foreground">
-          Events
+      {/* Navigation Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
+        <Link
+          href={"/events" as Route}
+          className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+        >
+          &larr; Back to Events Calendar
         </Link>
-        <span>/</span>
-        <span className="text-foreground truncate">{event.title}</span>
-      </nav>
+        <div className="text-xs text-muted-foreground">
+          Club Timezone: <span className="font-semibold text-foreground">{event.timezone}</span>
+        </div>
+      </div>
 
       {/* Main Event Article */}
-      <article className="rounded-2xl border border-border bg-card p-6 sm:p-10 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
+      <article className="rounded-3xl border border-border bg-card p-6 sm:p-10 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-6">
           <div className="flex items-center space-x-3">
             {event.category && <Badge variant="secondary">{event.category}</Badge>}
             {event.isPast && <Badge variant="outline">Past Event</Badge>}
             {event.isCancelled && <Badge variant="destructive">Cancelled</Badge>}
-          </div>
-
-          <div className="text-xs text-muted-foreground">
-            Club Timezone: <span className="font-semibold">{event.timezone}</span>
           </div>
         </div>
 
@@ -53,7 +50,7 @@ export function EventDetailCard({ event, prevEvent, nextEvent }: EventDetailCard
           </div>
         )}
 
-        <h1 className="mt-6 font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
+        <h1 className="mt-6 font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight tracking-tight">
           {event.title}
         </h1>
 
