@@ -1,0 +1,26 @@
+# ==============================================================================
+# Saugatuck Douglas Garden Club - CodeQL Analysis Configuration
+# ==============================================================================
+# Precision path filters and deep analysis query suite for Next.js App Router,
+# Supabase RLS security, and GitHub Actions workflows.
+# ==============================================================================
+
+name: "SDGC Advanced CodeQL Analysis"
+
+# Apply the comprehensive 'security-and-quality' suite
+# (includes high/critical CWEs, security-extended rules, and code reliability/correctness checks)
+queries:
+  - uses: security-and-quality
+
+# Restrict analysis to real application code and workflow definitions
+paths:
+  - src
+  - .github/workflows
+
+# Exclude generated code, static fixtures, documentation, and client assets
+paths-ignore:
+  - src/types/database.ts
+  - tests/fixtures/**
+  - docs/**
+  - public/**
+  - imports/**
