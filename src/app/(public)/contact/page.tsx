@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { ContactForm } from "@/features/contact/components/contact-form";
 import { getSiteContactSettings } from "@/features/content/queries";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +16,8 @@ export default async function ContactPage() {
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 space-y-12">
       {/* Hero Header */}
       <div className="text-center space-y-3 max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-semibold text-primary">
-          <span>Get In Touch</span>
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary uppercase tracking-wide">
+          Get In Touch
         </div>
         <h1 className="font-serif text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
           Contact Us
@@ -31,12 +31,12 @@ export default async function ContactPage() {
       {/* Main Two-Column Contact Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Contact Form Card */}
-        <div className="lg:col-span-7 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+        <div className="lg:col-span-7 rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs">
           <ContactForm />
         </div>
 
         {/* Right: Organization & Direct Details Card */}
-        <div className="lg:col-span-5 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="lg:col-span-5 rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs space-y-6">
           {/* Org Header */}
           <div className="border-b border-border/60 pb-4">
             <h2 className="font-serif text-2xl font-bold text-foreground">

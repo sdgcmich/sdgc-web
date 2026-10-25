@@ -19,7 +19,7 @@ export default async function GalleryPage() {
   const media = await listGalleryMedia();
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <GalleryView albums={albums} media={media} />
     </div>
   );

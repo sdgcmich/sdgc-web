@@ -55,10 +55,10 @@ export default async function EventsListPage(props: EventsListPageProps) {
       />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-border/60 pb-6">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary tracking-wide uppercase mb-2">
             What&apos;s Blooming
-          </span>
-          <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground">
+          </div>
+          <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
             Events Calendar
           </h1>
           <p className="mt-2 text-base text-muted-foreground">
