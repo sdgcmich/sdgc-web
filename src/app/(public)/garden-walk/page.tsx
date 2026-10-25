@@ -82,7 +82,7 @@ export default async function GardenWalkPage() {
       {/* Hero Header */}
       <div className="space-y-4 text-center max-w-3xl mx-auto">
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1 text-xs font-bold text-primary tracking-wide uppercase">
-          Premier Lakeshore Horticultural Event
+          {walk.heroBadge || "Premier Lakeshore Horticultural Event"}
         </div>
         <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground tracking-tight">
           {walk.title}
@@ -124,8 +124,8 @@ export default async function GardenWalkPage() {
                 horticultural variety and coastal charm.
               </p>
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-foreground text-xs sm:text-sm font-medium">
-                Advance tickets: $20 &bull; Day of tour: $25. All ticket proceeds directly fund club
-                civic beautification planters, parks, and youth horticulture scholarships.
+                {walk.priceNote ||
+                  "Advance tickets: $20 • Day of tour: $25. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships."}
               </div>
             </div>
           </div>
@@ -249,49 +249,46 @@ export default async function GardenWalkPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-2.5">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-              🎟️
+          {(walk.visitorGuide && walk.visitorGuide.length > 0
+            ? walk.visitorGuide
+            : [
+                {
+                  emoji: "🎟️",
+                  title: "Wristband Pickup",
+                  description:
+                    "Exchange your advance digital ticket confirmation for an official tour wristband and route program at our designated Saugatuck or Douglas welcome station.",
+                },
+                {
+                  emoji: "🌧️",
+                  title: "Rain or Shine",
+                  description:
+                    "The Garden Walk takes place rain or shine. In true Michigan gardening spirit, blooms glisten after a coastal shower! Bring an umbrella and comfortable walking shoes.",
+                },
+                {
+                  emoji: "🚶",
+                  title: "Terrain & Access",
+                  description:
+                    "Private coastal properties feature stone paths, gentle hills, and flagstone steps. Comfortable footwear is recommended; some garden areas may not accommodate strollers.",
+                },
+                {
+                  emoji: "📸",
+                  title: "Garden Etiquette",
+                  description:
+                    "Personal photography is encouraged. Please stay on marked paths, respect homeowner privacy, and kindly leave pets at home (registered service animals are welcome).",
+                },
+              ]
+          ).map((card) => (
+            <div
+              key={card.title}
+              className="rounded-2xl border border-border bg-card p-5 space-y-2.5"
+            >
+              <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                {card.emoji}
+              </div>
+              <h3 className="font-serif text-base font-bold text-foreground">{card.title}</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">{card.description}</p>
             </div>
-            <h3 className="font-serif text-base font-bold text-foreground">Wristband Pickup</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Exchange your advance digital ticket confirmation for an official tour wristband and
-              route program at our designated Saugatuck or Douglas welcome station.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-2.5">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-              🌧️
-            </div>
-            <h3 className="font-serif text-base font-bold text-foreground">Rain or Shine</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              The Garden Walk takes place rain or shine. In true Michigan gardening spirit, blooms
-              glisten after a coastal shower! Bring an umbrella and comfortable walking shoes.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-2.5">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-              🚶
-            </div>
-            <h3 className="font-serif text-base font-bold text-foreground">Terrain &amp; Access</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Private coastal properties feature stone paths, gentle hills, and flagstone steps.
-              Comfortable footwear is recommended; some garden areas may not accommodate strollers.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-2.5">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-              📸
-            </div>
-            <h3 className="font-serif text-base font-bold text-foreground">Garden Etiquette</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Personal photography is encouraged. Please stay on marked paths, respect homeowner
-              privacy, and kindly leave pets at home (registered service animals are welcome).
-            </p>
-          </div>
+          ))}
         </div>
       </section>
 
@@ -300,30 +297,30 @@ export default async function GardenWalkPage() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left max-w-xl">
             <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-              Community Involvement
+              {walk.volunteerCta?.badge || "Community Involvement"}
             </span>
             <h3 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
-              Showcase Your Garden or Volunteer on the Walk
+              {walk.volunteerCta?.heading || "Showcase Your Garden or Volunteer on the Walk"}
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Do you have a unique woodland retreat, cottage perennial haven, or native pollinator
-              haven you&apos;d love to share on a future tour? Or would you enjoy greeting visitors
-              as a friendly garden docent? We would love to hear from you!
+              {walk.volunteerCta?.body ||
+                "Do you have a unique woodland retreat, cottage perennial haven, or native pollinator haven you'd love to share on a future tour? Or would you enjoy greeting visitors as a friendly garden docent? We would love to hear from you!"}
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <Link
-              href={"/contact" as Route}
+              href={(walk.volunteerCta?.primaryHref || "/contact") as Route}
               className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
             >
-              Get In Touch &rarr;
+              <span>{walk.volunteerCta?.primaryLabel || "Get In Touch"}</span>
+              <span>&rarr;</span>
             </Link>
             <Link
-              href={"/join" as Route}
+              href={(walk.volunteerCta?.secondaryHref || "/join") as Route}
               className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
             >
-              Join the Club
+              {walk.volunteerCta?.secondaryLabel || "Join the Club"}
             </Link>
           </div>
         </div>

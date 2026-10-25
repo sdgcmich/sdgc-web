@@ -363,12 +363,14 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
           </p>
         </div>
 
-        <Button onClick={() => setIsModalOpen(true)}>+ Add New Event</Button>
+        <Button onClick={() => setIsModalOpen(true)} className="rounded-xl shadow-2xs">
+          + Add New Event
+        </Button>
       </div>
 
       {notice && (
         <div
-          className={`rounded-lg p-3 text-xs border ${
+          className={`rounded-xl p-3.5 text-xs border ${
             isError
               ? "bg-rose-50 dark:bg-rose-950/30 border-rose-600/30 text-rose-800 dark:text-rose-300"
               : "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-600/30 text-emerald-800 dark:text-emerald-300"
@@ -379,10 +381,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[700px]">
-            <thead className="border-b border-border bg-muted/50 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <thead className="border-b border-border/60 bg-muted/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="p-4">Event Title</th>
                 <th className="p-4">Date & Time (Detroit)</th>

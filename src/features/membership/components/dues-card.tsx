@@ -72,8 +72,8 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
   return (
     <div className="space-y-6">
       {/* Current Status Overview Card */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+      <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
           <div>
             <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
               Membership Term
@@ -106,14 +106,14 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
         </div>
 
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-          <div className="rounded-lg bg-muted/40 p-3 border border-border">
+          <div className="rounded-xl bg-muted/40 p-3.5 border border-border/60">
             <span className="text-xs text-muted-foreground block">Annual Dues Rate</span>
             <span className="text-lg font-bold text-foreground">
               {formattedDues} {membership.currency}
             </span>
           </div>
 
-          <div className="rounded-lg bg-muted/40 p-3 border border-border">
+          <div className="rounded-xl bg-muted/40 p-3.5 border border-border/60">
             <span className="text-xs text-muted-foreground block">Payment Status</span>
             <span className="text-lg font-bold capitalize text-foreground">
               {currentPaymentStatus === "unpaid"
@@ -124,7 +124,7 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
             </span>
           </div>
 
-          <div className="rounded-lg bg-muted/40 p-3 border border-border">
+          <div className="rounded-xl bg-muted/40 p-3.5 border border-border/60">
             <span className="text-xs text-muted-foreground block">Approval Decision</span>
             <span className="text-lg font-bold text-foreground">
               {membership.isApproved
@@ -174,7 +174,7 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
       )}
 
       {/* Payment Selection and Dues Payment */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-xs space-y-6">
+      <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-xs space-y-6">
         <div>
           <h3 className="font-serif text-xl font-bold text-foreground">Dues Payment Options</h3>
           <p className="text-xs text-muted-foreground mt-1">
@@ -188,10 +188,10 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
             type="button"
             onClick={() => setSelectedMethod("credit_card")}
             disabled={isConfirmed}
-            className={`rounded-xl border p-4 text-left transition-colors cursor-pointer ${
+            className={`rounded-xl border p-4 text-left transition-all cursor-pointer ${
               selectedMethod === "credit_card"
-                ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                : "border-border hover:bg-muted/40"
+                ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs"
+                : "border-border/60 hover:bg-muted/40"
             } ${isConfirmed ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             <div className="flex items-center justify-between mb-1">
@@ -210,10 +210,10 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
             type="button"
             onClick={() => setSelectedMethod("check")}
             disabled={isConfirmed}
-            className={`rounded-xl border p-4 text-left transition-colors cursor-pointer ${
+            className={`rounded-xl border p-4 text-left transition-all cursor-pointer ${
               selectedMethod === "check"
-                ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                : "border-border hover:bg-muted/40"
+                ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs"
+                : "border-border/60 hover:bg-muted/40"
             } ${isConfirmed ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             <div className="flex items-center justify-between mb-1">
@@ -228,7 +228,7 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
         </div>
 
         {selectedMethod === "check" ? (
-          <div className="rounded-lg bg-muted/50 p-4 border border-border text-xs text-foreground space-y-2">
+          <div className="rounded-xl bg-muted/50 p-4 border border-border/60 text-xs text-foreground space-y-2">
             <p className="font-semibold text-sm">Mailing Instructions for Check Payment:</p>
             <p>
               1. Make check payable to:{" "}
@@ -244,13 +244,13 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
             <p>
               4. Mail to: <span className="font-bold">SDGC, P.O. Box 1011, Douglas, MI 49406</span>
             </p>
-            <p className="mt-2 text-[11px] text-muted-foreground border-t border-border pt-2 italic">
+            <p className="mt-2 text-[11px] text-muted-foreground border-t border-border/60 pt-2 italic">
               Important: Per club bylaws, membership activation requires both financial clearance of
               your check and manual administrative approval.
             </p>
           </div>
         ) : (
-          <div className="rounded-lg bg-muted/30 p-4 border border-border text-xs text-muted-foreground space-y-1">
+          <div className="rounded-xl bg-muted/30 p-4 border border-border/60 text-xs text-muted-foreground space-y-1">
             <p className="font-semibold text-foreground">Online Card Payment Notice:</p>
             <p>
               In local development mode, a server-gated test adapter simulates the payment flow.
@@ -265,7 +265,7 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
           onClick={handlePay}
           disabled={isProcessing || isConfirmed}
           size="lg"
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto rounded-xl shadow-2xs"
         >
           {isProcessing
             ? "Processing..."
@@ -279,7 +279,7 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
 
       {/* Owner Payment History */}
       {paymentHistory && paymentHistory.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6 shadow-xs space-y-4">
+        <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-xs space-y-4">
           <div>
             <h3 className="font-serif text-xl font-bold text-foreground">Payment History</h3>
             <p className="text-xs text-muted-foreground mt-0.5">

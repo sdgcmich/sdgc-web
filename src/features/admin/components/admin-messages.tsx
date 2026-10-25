@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import type { AdminMessageRecord } from "../types";
@@ -66,12 +66,12 @@ export function AdminMessages({ initialMessages, initialFilter }: AdminMessagesP
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Messages List */}
-        <div className="md:col-span-1 rounded-xl border border-border bg-card shadow-xs overflow-hidden divide-y divide-border">
-          <div className="p-3 bg-muted/40 flex items-center justify-between gap-2">
+        <div className="md:col-span-1 rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden divide-y divide-border/60">
+          <div className="p-3 bg-muted/40 flex items-center justify-between gap-2 border-b border-border/60">
             <span className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
               Inquiries ({filteredMessages.length})
             </span>
-            <div className="flex items-center gap-1 text-[11px]">
+            <div className="inline-flex rounded-lg border border-border/60 bg-muted/50 p-0.5 text-[11px]">
               {[
                 { id: "all", label: "All" },
                 { id: "unread", label: "Unread" },
@@ -82,9 +82,9 @@ export function AdminMessages({ initialMessages, initialFilter }: AdminMessagesP
                   key={f.id}
                   type="button"
                   onClick={() => setFilter(f.id)}
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer ${
                     filter === f.id
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -150,7 +150,7 @@ export function AdminMessages({ initialMessages, initialFilter }: AdminMessagesP
         </div>
 
         {/* Message Detail Pane */}
-        <div className="md:col-span-2 rounded-xl border border-border bg-card p-6 shadow-xs">
+        <div className="md:col-span-2 rounded-2xl border border-border/60 bg-card p-6 shadow-xs">
           {activeMessage ? (
             <div className="space-y-5">
               <div className="flex justify-between items-start border-b border-border pb-4 gap-4">

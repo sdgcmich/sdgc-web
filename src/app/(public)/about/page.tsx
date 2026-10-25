@@ -21,7 +21,7 @@ export default async function AboutPage() {
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 space-y-12">
       <div className="space-y-4 text-center max-w-3xl mx-auto">
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary tracking-wide uppercase">
-          Dedicated Since 1928
+          {about.heroBadge || "Dedicated Since 1928"}
         </div>
         <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
           {about.title}

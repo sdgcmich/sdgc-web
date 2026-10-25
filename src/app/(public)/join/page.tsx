@@ -4,6 +4,7 @@ import { RegisterForm } from "@/features/auth/components/register-form";
 
 import { getCurrentTermInfo } from "@/features/payments/queries";
 import { getMembershipYear } from "@/features/membership/rules";
+import { getJoinPageContent } from "@/features/content/queries";
 
 export const metadata = {
   title: "Become A Member",
@@ -12,7 +13,7 @@ export const metadata = {
 };
 
 export default async function JoinPage() {
-  const term = await getCurrentTermInfo();
+  const [term, joinContent] = await Promise.all([getCurrentTermInfo(), getJoinPageContent()]);
   const currentMichiganYear = getMembershipYear(new Date(), "America/Detroit");
   const year = term?.year ?? currentMichiganYear;
   const duesFormatted = term
@@ -25,14 +26,14 @@ export default async function JoinPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-8 space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary tracking-wide uppercase">
-            Join Our Growing Community
+            {joinContent.badge}
           </div>
           <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
-            Become A Member
+            {joinContent.title}
           </h1>
 
-          <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-            <p className="font-semibold text-foreground text-base">Membership Dues & Term:</p>
+          <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+            <p className="font-semibold text-foreground text-base">{joinContent.introHeading}</p>
             <ul className="list-disc list-inside space-y-1 pl-1">
               <li>
                 Currently accepting new membership requests for{" "}
@@ -49,21 +50,37 @@ export default async function JoinPage() {
               </li>
             </ul>
 
-            <p>
+            {joinContent.benefits && joinContent.benefits.length > 0 && (
+              <div className="pt-2">
+                <p className="font-semibold text-foreground text-sm mb-2">
+                  Member Privileges & Community Impact:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {joinContent.benefits.map((benefit) => (
+                    <div
+                      key={benefit}
+                      className="flex items-start gap-2 rounded-lg border border-border/60 bg-card/60 p-2.5"
+                    >
+                      <span className="text-primary mt-0.5 shrink-0 font-bold">✓</span>
+                      <span className="text-foreground/90">{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="pt-1">
               Please use the registration form below to submit your profile and volunteer project
               preferences.
             </p>
 
-            <div className="rounded-xl border border-border bg-muted/40 p-4 text-xs space-y-1.5">
-              <p className="font-semibold text-foreground">Paying by Personal Check?</p>
-              <p>
-                Members wishing to pay dues via personal check can register below, then mail check
-                payable to:
-              </p>
+            <div className="rounded-xl border border-border/80 bg-muted/40 p-4 text-xs space-y-1.5">
+              <p className="font-semibold text-foreground">{joinContent.checkPayment.heading}</p>
+              <p>{joinContent.checkPayment.instructions}</p>
               <p className="font-medium text-foreground">
-                Saugatuck Douglas Garden Club (SDGC)
+                {joinContent.checkPayment.payableTo}
                 <br />
-                P.O. Box 1011, Douglas, MI 49406
+                {joinContent.checkPayment.address}
               </p>
             </div>
 

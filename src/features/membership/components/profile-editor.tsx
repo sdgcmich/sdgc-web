@@ -114,7 +114,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
     <form onSubmit={handleSave} method="POST" noValidate className="space-y-8">
       {statusMessage && (
         <div
-          className="rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-600/30 p-4 text-sm text-emerald-800 dark:text-emerald-300"
+          className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-600/30 p-4 text-xs font-semibold text-emerald-800 dark:text-emerald-300"
           role="status"
         >
           {statusMessage}
@@ -122,8 +122,8 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
       )}
 
       {/* Account Info (Read-only or restricted) */}
-      <section className="space-y-4 rounded-xl bg-muted/30 p-4 border border-border">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+      <section className="space-y-4 rounded-2xl bg-muted/40 p-5 border border-border/60">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           Member Identification
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -147,8 +147,8 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
       </section>
 
       {/* Editable Name & Address */}
-      <section className="space-y-4">
-        <h3 className="font-serif text-lg font-bold text-foreground border-b border-border pb-2">
+      <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-xs space-y-4">
+        <h3 className="font-serif text-lg font-bold text-foreground border-b border-border/60 pb-2">
           Contact & Address
         </h3>
 
@@ -249,8 +249,8 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
       </section>
 
       {/* Personal & Gardening */}
-      <section className="space-y-4">
-        <h3 className="font-serif text-lg font-bold text-foreground border-b border-border pb-2">
+      <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-xs space-y-4">
+        <h3 className="font-serif text-lg font-bold text-foreground border-b border-border/60 pb-2">
           Personal & Horticultural Details
         </h3>
 
@@ -261,6 +261,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
               id="prof-spouse"
               value={formData.spouseFirstName || ""}
               onChange={(e) => setFormData({ ...formData, spouseFirstName: e.target.value })}
+              className="rounded-xl border-border/60"
             />
           </div>
 
@@ -283,6 +284,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                       birthMonth: e.target.value ? Number(e.target.value) : undefined,
                     })
                   }
+                  className="rounded-xl border-border/60"
                 >
                   <option value="">Month</option>
                   {[
@@ -322,6 +324,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                     })
                   }
                   error={errors.birthDay}
+                  className="rounded-xl border-border/60"
                 />
               </div>
             </div>
@@ -353,6 +356,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
             value={formData.gardeningInterests || ""}
             onChange={(e) => setFormData({ ...formData, gardeningInterests: e.target.value })}
             placeholder="Favorite plants, home gardening hobbies, or specialized interests."
+            className="rounded-xl border-border/60"
           />
         </div>
 
@@ -364,12 +368,13 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
             value={formData.volunteerExperience || ""}
             onChange={(e) => setFormData({ ...formData, volunteerExperience: e.target.value })}
             placeholder="Professional skills, community volunteering, or background you'd love to share."
+            className="rounded-xl border-border/60"
           />
         </div>
       </section>
 
       {/* 8 Project Interests */}
-      <section className="space-y-4">
+      <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-xs space-y-4">
         <div>
           <h3 className="font-serif text-lg font-bold text-foreground">
             Project Participation Choices
@@ -379,7 +384,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-border bg-card p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-border/60 bg-muted/20 p-4">
           {PROJECT_INTEREST_CHOICES.map((choice) => (
             <Checkbox
               key={choice.code}
@@ -392,7 +397,12 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
         </div>
       </section>
 
-      <Button type="submit" disabled={isSaving || !mounted} size="lg">
+      <Button
+        type="submit"
+        disabled={isSaving || !mounted}
+        size="lg"
+        className="rounded-xl shadow-2xs"
+      >
         {isSaving ? "Saving Changes..." : "Save Profile Updates"}
       </Button>
     </form>

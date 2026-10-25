@@ -293,7 +293,7 @@ export function AdminDues({
       )}
 
       {/* Current Term Configuration Banner */}
-      <div className="rounded-xl border border-border bg-card p-4 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+      <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
             Active Annual Dues Term
@@ -310,14 +310,19 @@ export function AdminDues({
           </p>
         </div>
         {activeTerm && (
-          <Button size="sm" variant="outline" onClick={() => handleOpenEditTerm(activeTerm)}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-xl"
+            onClick={() => handleOpenEditTerm(activeTerm)}
+          >
             Edit Term & Extend Deadline
           </Button>
         )}
       </div>
 
       {terms.length > 1 && (
-        <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+        <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs">
           <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">
             All Membership Terms
           </h2>
@@ -325,7 +330,7 @@ export function AdminDues({
             {terms.map((t) => (
               <div
                 key={t.id || t.year}
-                className="flex items-center justify-between p-3 rounded-lg border border-border bg-background"
+                className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-background text-xs"
               >
                 <div>
                   <span className="font-semibold text-sm text-foreground">Year {t.year}</span>
@@ -336,7 +341,7 @@ export function AdminDues({
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-xs"
+                  className="text-xs rounded-lg"
                   onClick={() => handleOpenEditTerm(t)}
                 >
                   Edit
@@ -348,8 +353,8 @@ export function AdminDues({
       )}
 
       {/* Transactions Table & Filters */}
-      <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-border/60 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <span className="font-semibold text-sm">
               Dues Payment Journal ({filteredRecords.length} records)
@@ -366,11 +371,11 @@ export function AdminDues({
               placeholder="Search member, username, check #..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-xs h-8 w-full sm:w-56"
+              className="text-xs h-9 w-full sm:w-56 rounded-xl border-border/60 bg-card"
             />
 
             {/* Status Tabs */}
-            <div className="flex items-center gap-1 text-xs">
+            <div className="inline-flex rounded-xl border border-border/60 bg-muted/40 p-1 text-xs">
               {[
                 { id: "all", label: "All" },
                 { id: "pending", label: "Pending" },
@@ -381,10 +386,10 @@ export function AdminDues({
                   key={f.id}
                   type="button"
                   onClick={() => setStatusFilter(f.id)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                     statusFilter === f.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {f.label}

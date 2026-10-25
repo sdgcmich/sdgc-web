@@ -46,9 +46,7 @@ export default async function HomePage() {
             {/* Hero Text Column */}
             <div className="lg:col-span-7 text-center lg:text-left space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-                <span>Cultivating Community Since 1928</span>
-                <span>•</span>
-                <span>501(c)(3) Nonprofit</span>
+                {homeData.heroBadge || "Cultivating Community Since 1928 • 501(c)(3) Nonprofit"}
               </div>
 
               <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight text-foreground tracking-tight">
@@ -60,17 +58,18 @@ export default async function HomePage() {
               </p>
 
               {/* Highlights badge strip */}
-              <div className="flex flex-wrap justify-center lg:justify-start gap-2 pt-1 text-xs text-muted-foreground font-medium">
-                <span className="rounded-full bg-muted px-3 py-1 border border-border/60">
-                  🌸 47th Annual Garden Walk
-                </span>
-                <span className="rounded-full bg-muted px-3 py-1 border border-border/60">
-                  🌱 85+ Active Gardeners
-                </span>
-                <span className="rounded-full bg-muted px-3 py-1 border border-border/60">
-                  🏛️ 42 Civic Floral Planters
-                </span>
-              </div>
+              {homeData.heroHighlights && homeData.heroHighlights.length > 0 && (
+                <div className="flex flex-wrap justify-center lg:justify-start gap-2 pt-1 text-xs text-muted-foreground font-medium">
+                  {homeData.heroHighlights.map((hl) => (
+                    <span
+                      key={hl}
+                      className="rounded-full bg-muted px-3 py-1 border border-border/60"
+                    >
+                      {hl}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               <div className="pt-2 flex flex-wrap justify-center lg:justify-start gap-3 sm:gap-4">
                 <Link
@@ -377,31 +376,30 @@ export default async function HomePage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="space-y-4 text-center md:text-left max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary uppercase tracking-wider">
-                We&apos;d Love to Hear From You
+                {homeData.contactCta?.badge || "We'd Love to Hear From You"}
               </div>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
-                Have Questions or Inquiries?
+                {homeData.contactCta?.heading || "Have Questions or Inquiries?"}
               </h2>
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Whether you&apos;re curious about joining our club, attending the upcoming Garden
-                Walk, volunteering for civic planter workbees, or applying for our youth
-                horticulture scholarship, our club officers are here to help.
+                {homeData.contactCta?.body ||
+                  "Whether you're curious about joining our club, attending the upcoming Garden Walk, volunteering for civic planter workbees, or applying for our youth horticulture scholarship, our club officers are here to help."}
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row md:flex-col gap-3 shrink-0 w-full md:w-auto">
               <Link
-                href="/contact"
+                href={(homeData.contactCta?.primaryHref || "/contact") as Route}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all hover:shadow-md text-center"
               >
-                <span>Contact Club Officers</span>
+                <span>{homeData.contactCta?.primaryLabel || "Contact Club Officers"}</span>
                 <span>&rarr;</span>
               </Link>
               <Link
-                href="/events"
+                href={(homeData.contactCta?.secondaryHref || "/events") as Route}
                 className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors text-center"
               >
-                View Meeting Schedule
+                {homeData.contactCta?.secondaryLabel || "View Meeting Schedule"}
               </Link>
             </div>
           </div>

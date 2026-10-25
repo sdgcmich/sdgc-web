@@ -114,7 +114,7 @@ export function MemberDirectory({ initialMembers }: MemberDirectoryProps) {
   return (
     <div className="space-y-8">
       {/* Controls Bar */}
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4">
+      <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label
@@ -128,7 +128,7 @@ export function MemberDirectory({ initialMembers }: MemberDirectoryProps) {
               placeholder="Search by member name, city, or interests..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
+              className="w-full rounded-xl border-border/60 bg-card"
             />
           </div>
 
@@ -143,7 +143,7 @@ export function MemberDirectory({ initialMembers }: MemberDirectoryProps) {
               id="committee-filter"
               value={selectedInterest}
               onChange={(e) => setSelectedInterest(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-xl border border-border/60 bg-card px-3 py-2 text-sm text-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">All Committees & Projects</option>
               {PROJECT_INTEREST_CHOICES.map((choice) => (
@@ -155,7 +155,7 @@ export function MemberDirectory({ initialMembers }: MemberDirectoryProps) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+        <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
           <label className="flex items-center gap-2 cursor-pointer select-none text-muted-foreground hover:text-foreground">
             <input
               type="checkbox"
@@ -174,7 +174,7 @@ export function MemberDirectory({ initialMembers }: MemberDirectoryProps) {
 
       {/* Directory Grid */}
       {filteredMembers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-dashed border-border/60 p-12 text-center space-y-3">
           <div className="text-3xl">🌱</div>
           <h3 className="font-serif text-lg font-bold text-foreground">No members found</h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
@@ -202,7 +202,7 @@ export function MemberDirectory({ initialMembers }: MemberDirectoryProps) {
             return (
               <div
                 key={member.id}
-                className="rounded-2xl border border-border bg-card p-6 shadow-xs hover:border-primary/40 hover:shadow-sm transition-all flex flex-col justify-between space-y-4"
+                className="rounded-2xl border border-border/60 bg-card p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4"
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-3">
