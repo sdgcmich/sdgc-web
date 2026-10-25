@@ -6,7 +6,7 @@ import type { Route } from "next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MarkdownContent } from "@/components/ui/markdown-content";
+import { RichMarkdownEditor } from "@/components/ui/rich-markdown-editor";
 import {
   type AttachmentType,
   type Notice,
@@ -46,7 +46,6 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
   const [content, setContent] = React.useState("");
   const [isPinned, setIsPinned] = React.useState(false);
   const [isPublished, setIsPublished] = React.useState(true);
-  const [previewTab, setPreviewTab] = React.useState<"edit" | "preview">("edit");
   const [attachments, setAttachments] = React.useState<NoticeAttachment[]>([]);
   const [newAttachName, setNewAttachName] = React.useState("");
   const [newAttachUrl, setNewAttachUrl] = React.useState("");
@@ -74,7 +73,6 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
     setNewAttachUrl("");
     setNewAttachType("pdf");
     setFormError(null);
-    setPreviewTab("edit");
     setIsModalOpen(true);
   };
 
@@ -93,7 +91,6 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
     setNewAttachUrl("");
     setNewAttachType("pdf");
     setFormError(null);
-    setPreviewTab("edit");
     setIsModalOpen(true);
   };
 
@@ -518,58 +515,18 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
                 />
               </div>
 
-              {/* Content with Markdown Tabs */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="notice-content" required>
-                    Notice Content (Markdown Supported)
-                  </Label>
-                  <div className="flex items-center gap-1 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewTab("edit")}
-                      className={`px-2.5 py-1 rounded-md font-semibold ${
-                        previewTab === "edit"
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      Write
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewTab("preview")}
-                      className={`px-2.5 py-1 rounded-md font-semibold ${
-                        previewTab === "preview"
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      Preview
-                    </button>
-                  </div>
-                </div>
-
-                {previewTab === "edit" ? (
-                  <textarea
-                    id="notice-content"
-                    rows={8}
-                    required
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="Detailed notice body, schedules, bullet points, volunteer requirements..."
-                    className="w-full rounded-xl border border-border bg-card p-3 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary leading-relaxed"
-                  />
-                ) : (
-                  <div className="rounded-xl border border-border bg-muted/20 p-4 min-h-[160px] text-xs leading-relaxed text-foreground">
-                    {content ? (
-                      <MarkdownContent content={content} />
-                    ) : (
-                      <span className="text-muted-foreground italic">No content typed yet.</span>
-                    )}
-                  </div>
-                )}
-              </div>
+              {/* Content with Rich Markdown Editor */}
+              <RichMarkdownEditor
+                id="notice-content"
+                label="Notice Content"
+                required
+                value={content}
+                onChange={setContent}
+                rows={8}
+                minHeight="220px"
+                placeholder="Detailed notice body, schedules, bullet points, volunteer requirements..."
+                helperText="Use the formatting toolbar or keyboard shortcuts (Ctrl+B, Ctrl+I, Ctrl+K). Switch to Preview to view the rendered output."
+              />
 
               {/* Attachments Section */}
               <div className="space-y-3 rounded-2xl border border-border/80 bg-muted/20 p-4">

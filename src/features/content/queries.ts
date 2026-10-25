@@ -7,6 +7,7 @@ import {
   DEFAULT_HOMEPAGE_SECTIONS,
   DEFAULT_HOMEPAGE_STORY,
   DEFAULT_SITE_CONTACT,
+  type GenericPageData,
   type HomePageStory,
   type PageContent,
   type PageSection,
@@ -17,6 +18,7 @@ export {
   DEFAULT_HOMEPAGE_SECTIONS,
   DEFAULT_HOMEPAGE_STORY,
   DEFAULT_SITE_CONTACT,
+  type GenericPageData,
   type SiteContactSettings,
 };
 
@@ -329,4 +331,32 @@ export async function getSiteContactSettings(): Promise<SiteContactSettings> {
   }
 
   return DEFAULT_SITE_CONTACT;
+}
+
+export async function getPageBySlug(slug: string): Promise<GenericPageData | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("pages")
+      .select("slug, title, content, meta_description, status, published_at, updated_at")
+      .eq("slug", slug)
+      .eq("status", "published")
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      slug: data.slug,
+      title: data.title,
+      content: data.content || "",
+      metaDescription: data.meta_description || undefined,
+      status: data.status as "published" | "draft",
+      publishedAt: data.published_at || undefined,
+      updatedAt: data.updated_at || undefined,
+    };
+  } catch {
+    return null;
+  }
 }

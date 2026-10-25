@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { RichMarkdownEditor } from "@/components/ui/rich-markdown-editor";
 import type { AdminPageRecord } from "../types";
 import { updatePageAction, updateHomePageContentAction } from "../actions";
 import {
@@ -605,7 +606,7 @@ export function AdminContent({ initialPages, initialHomeContent }: AdminContentP
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-page-modal-title"
-            className="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto"
           >
             <h2 id="edit-page-modal-title" className="font-serif text-xl font-bold text-foreground">
               Edit Page: {editingPage.slug}
@@ -643,19 +644,15 @@ export function AdminContent({ initialPages, initialHomeContent }: AdminContentP
               </div>
 
               <div>
-                <label
-                  htmlFor="edit-page-content"
-                  className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1"
-                >
-                  Page Body Content (Markdown & Tour Paragraphs)
-                </label>
-                <textarea
+                <RichMarkdownEditor
                   id="edit-page-content"
-                  rows={5}
+                  label="Page Body Content"
                   value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  placeholder="Enter detailed page content, civic project updates, or tour instructions..."
-                  className="w-full rounded-md border border-input bg-background p-3 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none font-sans"
+                  onChange={setEditContent}
+                  rows={14}
+                  minHeight="320px"
+                  placeholder="Enter detailed page content in Markdown (headings, lists, links, bold, italic)..."
+                  helperText="Use the formatting toolbar or keyboard shortcuts (Ctrl+B, Ctrl+I, Ctrl+K). Switch to Preview to view the rendered output."
                 />
               </div>
 

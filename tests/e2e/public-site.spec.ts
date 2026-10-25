@@ -194,4 +194,20 @@ test.describe("Public Site Navigation & Experiences", () => {
     // Verify summary updates (3 tickets @ $20 = $60.00)
     await expect(page.getByText("$60.00 USD")).toBeVisible();
   });
+
+  test("renders dynamic legal pages (/terms and /privacy) with botanical policy content", async ({
+    page,
+  }) => {
+    // Terms of Use
+    await page.goto("/terms");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Terms of Use");
+    await expect(page.getByText("Organization & Acceptance of Terms")).toBeVisible();
+    await expect(page.getByText(/Annual, Non-Recurring Dues/i)).toBeVisible();
+
+    // Privacy Policy
+    await page.goto("/privacy");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Privacy Policy");
+    await expect(page.getByText("Our Commitment to Your Privacy")).toBeVisible();
+    await expect(page.getByText(/Member Directory Privacy/i)).toBeVisible();
+  });
 });

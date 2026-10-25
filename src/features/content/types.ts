@@ -33,6 +33,16 @@ export interface PageContent {
   sections: PageSection[];
 }
 
+export interface GenericPageData {
+  slug: string;
+  title: string;
+  content: string;
+  metaDescription?: string;
+  status: "published" | "draft";
+  publishedAt?: string;
+  updatedAt?: string;
+}
+
 export interface SiteContactSettings {
   name: string;
   phone: string;
