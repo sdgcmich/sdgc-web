@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireCapability } from "@/features/auth/authorization";
@@ -30,23 +30,31 @@ export async function getAdminOverviewStats(): Promise<AdminMetrics> {
     membersQuery = membersQuery.eq("term_id", activeTerm.id);
   }
 
-  const [membersRes, pendingRes, paymentsRes, eventsRes, messagesRes] = await Promise.all([
-    membersQuery,
-    supabase
-      .from("memberships")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending"),
-    supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    supabase
-      .from("events")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "published")
-      .gte("starts_at", new Date().toISOString()),
-    supabase
-      .from("contact_messages")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "unread"),
-  ]);
+  const [membersRes, pendingRes, paymentsRes, eventsRes, messagesRes, ticketsRes] =
+    await Promise.all([
+      membersQuery,
+      supabase
+        .from("memberships")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabase
+        .from("payments")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabase
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "published")
+        .gte("starts_at", new Date().toISOString()),
+      supabase
+        .from("contact_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "unread"),
+      supabase
+        .from("ticket_orders")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "confirmed"),
+    ]);
 
   const queryError =
     membersRes.error ||
@@ -65,6 +73,7 @@ export async function getAdminOverviewStats(): Promise<AdminMetrics> {
     unreconciledPayments: paymentsRes.count ?? 0,
     upcomingEvents: eventsRes.count ?? 0,
     unreadMessages: messagesRes.count ?? 0,
+    totalTickets: ticketsRes.count ?? 0,
   };
 }
 

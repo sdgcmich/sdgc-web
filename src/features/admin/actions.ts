@@ -7,12 +7,25 @@ import type { Database, Json } from "@/types/database";
 import { optimizeImage } from "@/lib/media/optimizer";
 import { getStorageProvider } from "@/lib/storage/provider";
 import {
+  DEFAULT_ABOUT_SECTIONS,
+  DEFAULT_GARDEN_WALK_HIGHLIGHTS,
+  DEFAULT_GARDEN_WALK_VISITOR_GUIDE,
+  DEFAULT_GARDEN_WALK_VOLUNTEER_CTA,
+  DEFAULT_HOMEPAGE_CONTACT_CTA,
+  DEFAULT_HOMEPAGE_HIGHLIGHTS,
   DEFAULT_HOMEPAGE_SECTIONS,
   DEFAULT_HOMEPAGE_STORY,
+  DEFAULT_JOIN_PAGE_DATA,
   DEFAULT_SITE_CONTACT,
+  type ContactCtaSection,
+  type HomePageStory,
+  type JoinPageData,
+  type PageSection,
   type SiteContactSettings,
+  type ValueHighlight,
+  type VisitorGuideCard,
+  type VolunteerCtaSection,
 } from "@/features/content/queries";
-import type { HomePageStory, PageSection } from "@/features/content/types";
 import type { ActionResult, AdminVenueRecord } from "./types";
 
 export async function createVenueAction(input: {
@@ -837,10 +850,13 @@ export async function updateSiteContactAction(
 
 export async function updateHomePageContentAction(input: {
   motto?: string;
+  heroBadge?: string;
+  heroHighlights?: string[];
   story?: Partial<HomePageStory>;
   sections?: PageSection[];
+  contactCta?: Partial<ContactCtaSection>;
 }): Promise<ActionResult> {
-  const user = await requireCapability("settings.manage");
+  const user = await requireCapability(["settings.manage", "content.manage"]);
   const supabase = await createClient();
 
   const { data: existing } = await supabase
@@ -851,12 +867,20 @@ export async function updateHomePageContentAction(input: {
 
   const currentVal =
     (existing?.value as {
+      heroBadge?: string;
+      heroHighlights?: string[];
       story?: Partial<HomePageStory>;
       sections?: PageSection[];
       motto?: string;
+      contactCta?: Partial<ContactCtaSection>;
     } | null) || {};
 
   const newVal = {
+    heroBadge: input.heroBadge !== undefined ? input.heroBadge : currentVal.heroBadge,
+    heroHighlights:
+      input.heroHighlights && input.heroHighlights.length > 0
+        ? input.heroHighlights
+        : currentVal.heroHighlights || DEFAULT_HOMEPAGE_HIGHLIGHTS,
     motto: input.motto !== undefined ? input.motto : currentVal.motto,
     story: {
       ...DEFAULT_HOMEPAGE_STORY,
@@ -864,12 +888,17 @@ export async function updateHomePageContentAction(input: {
       ...(input.story || {}),
     },
     sections: input.sections || currentVal.sections || DEFAULT_HOMEPAGE_SECTIONS,
+    contactCta: {
+      ...DEFAULT_HOMEPAGE_CONTACT_CTA,
+      ...(currentVal.contactCta || {}),
+      ...(input.contactCta || {}),
+    },
   };
 
   const { error } = await supabase.from("site_settings").upsert({
     key: "homepage_content",
     value: newVal as unknown as Database["public"]["Tables"]["site_settings"]["Insert"]["value"],
-    description: "Homepage motto, 4 core pillars, and community story",
+    description: "Homepage motto, hero badges, 4 core pillars, and community story",
     updated_at: new Date().toISOString(),
   });
 
@@ -912,6 +941,236 @@ export async function updateHomePageContentAction(input: {
   revalidatePath("/admin/settings");
   revalidatePath("/admin");
   return { success: true, message: "Homepage copy & pillars updated successfully" };
+}
+
+export async function updateAboutPageContentAction(input: {
+  heroBadge?: string;
+  title?: string;
+  subtitle?: string;
+  sections?: PageSection[];
+}): Promise<ActionResult> {
+  const user = await requireCapability(["settings.manage", "content.manage"]);
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "about_content")
+    .maybeSingle();
+
+  const currentVal =
+    (existing?.value as {
+      heroBadge?: string;
+      title?: string;
+      subtitle?: string;
+      sections?: PageSection[];
+    } | null) || {};
+
+  const newVal = {
+    heroBadge: input.heroBadge !== undefined ? input.heroBadge : currentVal.heroBadge,
+    title: input.title !== undefined ? input.title : currentVal.title,
+    subtitle: input.subtitle !== undefined ? input.subtitle : currentVal.subtitle,
+    sections: input.sections || currentVal.sections || DEFAULT_ABOUT_SECTIONS,
+  };
+
+  const { error } = await supabase.from("site_settings").upsert({
+    key: "about_content",
+    value: newVal as unknown as Database["public"]["Tables"]["site_settings"]["Insert"]["value"],
+    description: "About Us structured story, history, and community programs",
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  // Also sync title and subtitle to pages table if modified
+  if (input.title || input.subtitle) {
+    await supabase
+      .from("pages")
+      .update({
+        ...(input.title ? { title: input.title.trim() } : {}),
+        ...(input.subtitle ? { meta_description: input.subtitle.trim() } : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("slug", "about");
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: user.id,
+    action: "content.updated",
+    entity_type: "site_settings",
+    entity_id: "about_content",
+    details: input as unknown as NonNullable<Json>,
+  });
+
+  revalidatePath("/about");
+  revalidatePath("/admin/content");
+  revalidatePath("/admin");
+  return { success: true, message: "About Us page content updated successfully" };
+}
+
+export async function updateGardenWalkContentAction(input: {
+  heroBadge?: string;
+  title?: string;
+  subtitle?: string;
+  priceNote?: string;
+  highlights?: ValueHighlight[];
+  visitorGuide?: VisitorGuideCard[];
+  volunteerCta?: Partial<VolunteerCtaSection>;
+}): Promise<ActionResult> {
+  const user = await requireCapability(["settings.manage", "content.manage"]);
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "garden_walk_content")
+    .maybeSingle();
+
+  const currentVal =
+    (existing?.value as {
+      heroBadge?: string;
+      title?: string;
+      subtitle?: string;
+      priceNote?: string;
+      highlights?: ValueHighlight[];
+      visitorGuide?: VisitorGuideCard[];
+      volunteerCta?: Partial<VolunteerCtaSection>;
+    } | null) || {};
+
+  const newVal = {
+    heroBadge: input.heroBadge !== undefined ? input.heroBadge : currentVal.heroBadge,
+    title: input.title !== undefined ? input.title : currentVal.title,
+    subtitle: input.subtitle !== undefined ? input.subtitle : currentVal.subtitle,
+    priceNote: input.priceNote !== undefined ? input.priceNote : currentVal.priceNote,
+    highlights: input.highlights || currentVal.highlights || DEFAULT_GARDEN_WALK_HIGHLIGHTS,
+    visitorGuide:
+      input.visitorGuide || currentVal.visitorGuide || DEFAULT_GARDEN_WALK_VISITOR_GUIDE,
+    volunteerCta: {
+      ...DEFAULT_GARDEN_WALK_VOLUNTEER_CTA,
+      ...(currentVal.volunteerCta || {}),
+      ...(input.volunteerCta || {}),
+    },
+  };
+
+  const { error } = await supabase.from("site_settings").upsert({
+    key: "garden_walk_content",
+    value: newVal as unknown as Database["public"]["Tables"]["site_settings"]["Insert"]["value"],
+    description: "Annual Garden Walk visitor guide, highlights, and volunteer CTA",
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  // Also sync title and subtitle to pages table if modified
+  if (input.title || input.subtitle) {
+    await supabase
+      .from("pages")
+      .update({
+        ...(input.title ? { title: input.title.trim() } : {}),
+        ...(input.subtitle ? { meta_description: input.subtitle.trim() } : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("slug", "garden-walk");
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: user.id,
+    action: "content.updated",
+    entity_type: "site_settings",
+    entity_id: "garden_walk_content",
+    details: input as unknown as NonNullable<Json>,
+  });
+
+  revalidatePath("/garden-walk");
+  revalidatePath("/admin/content");
+  revalidatePath("/admin");
+  return { success: true, message: "Garden Walk page content updated successfully" };
+}
+
+export async function updateJoinPageContentAction(input: {
+  badge?: string;
+  title?: string;
+  introHeading?: string;
+  checkPayment?: {
+    heading?: string;
+    instructions?: string;
+    payableTo?: string;
+    address?: string;
+  };
+  benefits?: string[];
+}): Promise<ActionResult> {
+  const user = await requireCapability(["settings.manage", "content.manage"]);
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "join_content")
+    .maybeSingle();
+
+  const currentVal = (existing?.value as Partial<JoinPageData> | null) || {};
+
+  const newVal: JoinPageData = {
+    badge:
+      input.badge !== undefined ? input.badge : currentVal.badge || DEFAULT_JOIN_PAGE_DATA.badge,
+    title:
+      input.title !== undefined ? input.title : currentVal.title || DEFAULT_JOIN_PAGE_DATA.title,
+    introHeading:
+      input.introHeading !== undefined
+        ? input.introHeading
+        : currentVal.introHeading || DEFAULT_JOIN_PAGE_DATA.introHeading,
+    checkPayment: {
+      heading:
+        input.checkPayment?.heading ||
+        currentVal.checkPayment?.heading ||
+        DEFAULT_JOIN_PAGE_DATA.checkPayment.heading,
+      instructions:
+        input.checkPayment?.instructions ||
+        currentVal.checkPayment?.instructions ||
+        DEFAULT_JOIN_PAGE_DATA.checkPayment.instructions,
+      payableTo:
+        input.checkPayment?.payableTo ||
+        currentVal.checkPayment?.payableTo ||
+        DEFAULT_JOIN_PAGE_DATA.checkPayment.payableTo,
+      address:
+        input.checkPayment?.address ||
+        currentVal.checkPayment?.address ||
+        DEFAULT_JOIN_PAGE_DATA.checkPayment.address,
+    },
+    benefits:
+      input.benefits && input.benefits.length > 0
+        ? input.benefits
+        : currentVal.benefits || DEFAULT_JOIN_PAGE_DATA.benefits,
+  };
+
+  const { error } = await supabase.from("site_settings").upsert({
+    key: "join_content",
+    value: newVal as unknown as Database["public"]["Tables"]["site_settings"]["Insert"]["value"],
+    description: "Membership registration page instructions, check payment details, and benefits",
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: user.id,
+    action: "content.updated",
+    entity_type: "site_settings",
+    entity_id: "join_content",
+    details: input as unknown as NonNullable<Json>,
+  });
+
+  revalidatePath("/join");
+  revalidatePath("/membership");
+  revalidatePath("/admin/content");
+  revalidatePath("/admin");
+  return { success: true, message: "Membership & Join page content updated successfully" };
 }
 
 // ==========================================

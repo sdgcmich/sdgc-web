@@ -243,7 +243,7 @@ export function AdminMembers({ initialMembers, initialStatusFilter }: AdminMembe
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs">
+          <div className="inline-flex rounded-xl border border-border/60 bg-muted/40 p-1 text-xs">
             {[
               { id: "all", label: "All" },
               { id: "pending", label: "Pending" },
@@ -253,10 +253,10 @@ export function AdminMembers({ initialMembers, initialStatusFilter }: AdminMembe
                 key={f.id}
                 type="button"
                 onClick={() => setStatusFilter(f.id)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   statusFilter === f.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {f.label}
@@ -268,6 +268,7 @@ export function AdminMembers({ initialMembers, initialStatusFilter }: AdminMembe
               placeholder="Search members..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
+              className="rounded-xl border-border/60 bg-card"
             />
           </div>
         </div>
@@ -275,7 +276,7 @@ export function AdminMembers({ initialMembers, initialStatusFilter }: AdminMembe
 
       {actionNotice && (
         <div
-          className={`rounded-lg p-3 text-xs border ${
+          className={`rounded-xl p-3.5 text-xs border ${
             isError
               ? "bg-rose-50 dark:bg-rose-950/30 border-rose-600/30 text-rose-800 dark:text-rose-300"
               : "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-600/30 text-emerald-800 dark:text-emerald-300"
@@ -286,10 +287,10 @@ export function AdminMembers({ initialMembers, initialStatusFilter }: AdminMembe
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[820px]">
-            <thead className="border-b border-border bg-muted/50 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <thead className="border-b border-border/60 bg-muted/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="p-4 min-w-[140px]">Member Name</th>
                 <th className="p-4 min-w-[180px]">Username & Email</th>

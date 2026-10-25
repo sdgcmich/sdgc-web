@@ -611,13 +611,13 @@ export function AdminMedia({ initialMedia = [], initialAlbums = [] }: AdminMedia
           </p>
         </div>
 
-        <div className="inline-flex rounded-xl border border-border p-1 bg-muted/30 self-start sm:self-auto">
+        <div className="inline-flex rounded-xl border border-border/60 p-1 bg-muted/40 self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setActiveTab("albums")}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === "albums"
-                ? "bg-card text-foreground shadow-xs border border-border/50"
+                ? "bg-primary text-primary-foreground shadow-2xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -626,9 +626,9 @@ export function AdminMedia({ initialMedia = [], initialAlbums = [] }: AdminMedia
           <button
             type="button"
             onClick={() => setActiveTab("media")}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === "media"
-                ? "bg-card text-foreground shadow-xs border border-border/50"
+                ? "bg-primary text-primary-foreground shadow-2xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >

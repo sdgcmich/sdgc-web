@@ -431,14 +431,14 @@ function SidebarNavigation({
   return (
     <div className="flex h-full flex-col bg-card">
       {/* Brand Header */}
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-5">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 px-5">
         <Link href="/admin" onClick={onNavigate} className="flex items-center space-x-3">
           <Image
             src={resolveMediaUrl("/images/brand/sdgc-logo.jpg")}
             alt="SDGC Logo"
             width={36}
             height={36}
-            className="h-9 w-9 rounded-full object-cover border border-border"
+            className="h-9 w-9 rounded-full object-cover border border-border/60"
           />
           <div className="flex flex-col">
             <span className="font-serif text-base font-bold leading-tight text-foreground">
@@ -449,7 +449,7 @@ function SidebarNavigation({
             </span>
           </div>
         </Link>
-        <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+        <span className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
           {activeRole}
         </span>
       </div>
@@ -470,10 +470,10 @@ function SidebarNavigation({
                     key={item.href}
                     href={item.href as Route}
                     onClick={onNavigate}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
                       isActive
-                        ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
-                        : "text-foreground/80 hover:bg-muted hover:text-foreground"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                        : "text-foreground/80 hover:bg-primary/5 hover:text-foreground"
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
@@ -487,11 +487,11 @@ function SidebarNavigation({
       </div>
 
       {/* Sidebar Footer */}
-      <div className="shrink-0 border-t border-border p-4 space-y-2 text-xs">
+      <div className="shrink-0 border-t border-border/60 p-4 space-y-2 text-xs">
         <Link
           href="/"
           onClick={onNavigate}
-          className="flex items-center justify-between rounded-md px-3 py-2 text-primary font-medium hover:bg-primary/5 transition-colors"
+          className="flex items-center justify-between rounded-xl px-3 py-2 text-primary font-medium hover:bg-primary/10 transition-colors"
         >
           <span>View public site</span>
           <span className="text-xs">&rarr;</span>
@@ -550,7 +550,7 @@ export function AdminShell({
   return (
     <div className="flex min-h-screen bg-background text-foreground antialiased">
       {/* Desktop Sticky Sidebar (Visible only on lg: 1024px+) */}
-      <aside className="hidden lg:flex w-64 xl:w-72 shrink-0 border-r border-border bg-card flex-col sticky top-0 h-screen">
+      <aside className="hidden lg:flex w-64 xl:w-72 shrink-0 border-r border-border/60 bg-card flex-col sticky top-0 h-screen">
         <SidebarNavigation
           visibleGroups={visibleGroups}
           pathname={pathname}
@@ -566,12 +566,12 @@ export function AdminShell({
             onClick={() => setIsSidebarOpen(false)}
             aria-hidden="true"
           />
-          <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] border-r border-border bg-card shadow-2xl flex flex-col z-10">
+          <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] border-r border-border/60 bg-card shadow-2xl flex flex-col z-10">
             <div className="absolute top-4 right-3 z-20">
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(false)}
-                className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                className="rounded-xl p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                 aria-label="Close navigation"
               >
                 <CloseIcon className="h-5 w-5" />
@@ -590,12 +590,12 @@ export function AdminShell({
       {/* Main Container Area */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Workspace Top Bar */}
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border bg-card/90 px-4 sm:px-6 backdrop-blur-sm">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-card/95 px-4 sm:px-6 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden flex items-center justify-center p-2 rounded-lg border border-border text-foreground hover:bg-muted transition-colors cursor-pointer shadow-2xs"
+              className="lg:hidden flex items-center justify-center p-2 rounded-xl border border-border/60 text-foreground hover:bg-muted transition-colors cursor-pointer shadow-2xs"
               aria-label="Open administration navigation"
               aria-expanded={isSidebarOpen}
             >
@@ -615,7 +615,7 @@ export function AdminShell({
             {userEmail && (
               <Link
                 href="/admin/settings/profile"
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted border border-border px-2.5 py-1.5 rounded-lg font-mono transition-colors"
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted border border-border/60 px-2.5 py-1.5 rounded-xl font-mono transition-colors"
                 title="Manage Admin Profile"
               >
                 <UserIcon className="h-3.5 w-3.5 text-primary" />
@@ -624,7 +624,7 @@ export function AdminShell({
             )}
             <Link
               href="/admin/settings/profile"
-              className="sm:hidden flex items-center justify-center p-2 rounded-lg border border-border text-foreground hover:bg-muted transition-colors"
+              className="sm:hidden flex items-center justify-center p-2 rounded-xl border border-border/60 text-foreground hover:bg-muted transition-colors"
               title="Admin Profile"
             >
               <UserIcon className="h-4 w-4 text-primary" />
@@ -632,7 +632,7 @@ export function AdminShell({
             <form action={logoutAction}>
               <button
                 type="submit"
-                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer shadow-2xs"
               >
                 <LogoutIcon className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Logout</span>

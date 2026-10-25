@@ -1,4 +1,4 @@
-﻿import type { ApplicationStatus, PaymentStatus } from "@/features/membership/types";
+import type { ApplicationStatus, PaymentStatus } from "@/features/membership/types";
 
 export interface ActionResult<T = unknown> {
   success: boolean;
@@ -13,6 +13,7 @@ export interface AdminMetrics {
   unreconciledPayments: number;
   upcomingEvents: number;
   unreadMessages: number;
+  totalTickets?: number;
 }
 
 export interface AdminMemberRecord {

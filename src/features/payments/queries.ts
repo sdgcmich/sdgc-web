@@ -16,50 +16,54 @@ export interface DuesTermInfo {
 import { getMembershipYear } from "@/features/membership/rules";
 
 export async function getCurrentTermInfo(): Promise<DuesTermInfo | null> {
-  const supabase = await createClient();
-  const michiganYear = getMembershipYear(new Date(), "America/Detroit");
-  const nowIso = new Date().toISOString();
+  try {
+    const supabase = await createClient();
+    const michiganYear = getMembershipYear(new Date(), "America/Detroit");
+    const nowIso = new Date().toISOString();
 
-  // 1. Try finding term matching current Michigan calendar year
-  let { data } = await supabase
-    .from("membership_terms")
-    .select("id, year, dues_cents, currency, opens_at, closes_at")
-    .eq("year", michiganYear)
-    .maybeSingle();
-
-  // 2. Fallback to open term by date range
-  if (!data) {
-    const { data: openTerm } = await supabase
+    // 1. Try finding term matching current Michigan calendar year
+    let { data } = await supabase
       .from("membership_terms")
       .select("id, year, dues_cents, currency, opens_at, closes_at")
-      .lte("opens_at", nowIso)
-      .gte("closes_at", nowIso)
-      .order("year", { ascending: false })
-      .limit(1)
+      .eq("year", michiganYear)
       .maybeSingle();
-    data = openTerm;
-  }
 
-  // 3. Fallback to latest configured term
-  if (!data) {
-    const { data: latestTerm } = await supabase
-      .from("membership_terms")
-      .select("id, year, dues_cents, currency, opens_at, closes_at")
-      .order("year", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    data = latestTerm;
-  }
+    // 2. Fallback to open term by date range
+    if (!data) {
+      const { data: openTerm } = await supabase
+        .from("membership_terms")
+        .select("id, year, dues_cents, currency, opens_at, closes_at")
+        .lte("opens_at", nowIso)
+        .gte("closes_at", nowIso)
+        .order("year", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      data = openTerm;
+    }
 
-  if (!data) return null;
-  return {
-    id: data.id,
-    year: data.year,
-    duesCents: data.dues_cents,
-    currency: data.currency,
-    opensAt: data.opens_at,
-    closesAt: data.closes_at,
-  };
+    // 3. Fallback to latest configured term
+    if (!data) {
+      const { data: latestTerm } = await supabase
+        .from("membership_terms")
+        .select("id, year, dues_cents, currency, opens_at, closes_at")
+        .order("year", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      data = latestTerm;
+    }
+
+    if (!data) return null;
+    return {
+      id: data.id,
+      year: data.year,
+      duesCents: data.dues_cents,
+      currency: data.currency,
+      opensAt: data.opens_at,
+      closesAt: data.closes_at,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function getRecentPaymentsForUser(): Promise<PaymentRecord[]> {
