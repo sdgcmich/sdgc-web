@@ -21,6 +21,7 @@ interface MobileNavigationProps {
   currentUser?: {
     email: string;
     isStaff: boolean;
+    roleName?: string;
   } | null;
   toggleRef: React.RefObject<HTMLButtonElement | null>;
 }
@@ -179,9 +180,9 @@ export function MobileNavigation({
           <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
             Member & Admin Area
           </span>
-          {currentUser?.isStaff && (
+          {currentUser && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-              Staff
+              {currentUser.roleName || (currentUser.isStaff ? "Staff" : "Member")}
             </span>
           )}
         </div>

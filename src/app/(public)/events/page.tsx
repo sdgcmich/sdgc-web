@@ -53,17 +53,41 @@ export default async function EventsListPage(props: EventsListPageProps) {
         // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data is safely serialized
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(eventsJsonLd) }}
       />
-      <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-          What&apos;s Blooming
-        </span>
-        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground">
-          Events Calendar
-        </h1>
-        <p className="mt-2 text-base text-muted-foreground">
-          Join us for community workshops, educational lectures, civic planting workbees, and our
-          premier Garden Walk fundraiser.
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-border/60 pb-6">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+            What&apos;s Blooming
+          </span>
+          <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground">
+            Events Calendar
+          </h1>
+          <p className="mt-2 text-base text-muted-foreground">
+            Join us for community workshops, educational lectures, civic planting workbees, and our
+            premier Garden Walk fundraiser.
+          </p>
+        </div>
+
+        <a
+          href="/events/feed.ics"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted hover:border-primary/40 transition-colors shrink-0 shadow-2xs"
+          title="Subscribe to iCalendar feed in Apple Calendar, Google Calendar, or Outlook"
+        >
+          <svg
+            aria-hidden="true"
+            className="h-4 w-4 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+            />
+          </svg>
+          <span>Subscribe Calendar (.ics)</span>
+        </a>
       </div>
 
       <EventViewSelector currentView="list" />

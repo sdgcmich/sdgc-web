@@ -22,6 +22,11 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
     env: {
+      NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3000",
+      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+        "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH",
       NEXT_PUBLIC_LOCAL_PAYMENTS_ENABLED: "true",
       LOCAL_PAYMENTS_SIMULATION: "true",
       ALLOW_LOCAL_PRODUCTION_BUILD_TESTING: "true",

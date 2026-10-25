@@ -3,6 +3,15 @@ export type NoticeCategory =
 
 export type NoticePriority = "low" | "normal" | "high" | "urgent";
 
+export type AttachmentType = "pdf" | "image" | "doc" | "other";
+
+export interface NoticeAttachment {
+  name: string;
+  url: string;
+  type?: AttachmentType;
+  sizeBytes?: number;
+}
+
 export interface Notice {
   id: string;
   title: string;
@@ -17,6 +26,7 @@ export interface Notice {
   expiresAt: string | null;
   authorId: string | null;
   authorName?: string | null;
+  attachments?: NoticeAttachment[];
   createdAt: string;
   updatedAt: string;
 }
@@ -30,6 +40,7 @@ export interface CreateNoticeInput {
   priority: NoticePriority;
   isPinned: boolean;
   isPublished: boolean;
+  attachments?: NoticeAttachment[];
 }
 
 export interface UpdateNoticeInput extends CreateNoticeInput {
@@ -51,4 +62,12 @@ export function isValidNoticeCategory(cat: string): cat is NoticeCategory {
 
 export function isValidNoticePriority(p: string): p is NoticePriority {
   return ["low", "normal", "high", "urgent"].includes(p);
+}
+
+export function detectAttachmentType(urlOrName: string): AttachmentType {
+  const lower = urlOrName.toLowerCase();
+  if (lower.endsWith(".pdf")) return "pdf";
+  if (/\.(jpe?g|png|webp|gif|svg|avif)$/.test(lower)) return "image";
+  if (/\.(docx?|odt|rtf|txt|csv|xlsx?|pptx?)$/.test(lower)) return "doc";
+  return "other";
 }

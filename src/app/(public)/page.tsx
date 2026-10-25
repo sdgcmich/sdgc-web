@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { getHomePageContent, getSiteContactSettings } from "@/features/content/queries";
 import { listUpcomingEvents } from "@/features/events/queries";
-import { ContactForm } from "@/features/contact/components/contact-form";
 import { formatEventDateTime } from "@/features/events/calendar";
 import { generateOrganizationSchema, serializeJsonLd } from "@/lib/jsonld";
 import { resolveMediaUrl } from "@/lib/storage/media-url";
@@ -372,23 +371,40 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Shared Contact Form Anchor Section */}
-      <section id="contact" className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 scroll-mt-24">
-        <div className="rounded-2xl border border-border bg-card p-8 sm:p-12 shadow-sm">
-          <div className="text-center max-w-xl mx-auto mb-8 space-y-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-              Get In Touch
-            </span>
-            <h2 className="font-serif text-3xl font-bold text-foreground">
-              Contact Saugatuck Douglas Garden Club
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Have questions about becoming a member, Garden Walk tickets, or community garden
-              projects? Send us a note below.
-            </p>
-          </div>
+      {/* Contact & Inquiries CTA Section */}
+      <section id="contact" className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 scroll-mt-24">
+        <div className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card p-8 sm:p-12 shadow-sm">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="space-y-4 text-center md:text-left max-w-xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary uppercase tracking-wider">
+                We&apos;d Love to Hear From You
+              </div>
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
+                Have Questions or Inquiries?
+              </h2>
+              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                Whether you&apos;re curious about joining our club, attending the upcoming Garden
+                Walk, volunteering for civic planter workbees, or applying for our youth
+                horticulture scholarship, our club officers are here to help.
+              </p>
+            </div>
 
-          <ContactForm />
+            <div className="flex flex-col sm:flex-row md:flex-col gap-3 shrink-0 w-full md:w-auto">
+              <Link
+                href="/contact"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all hover:shadow-md text-center"
+              >
+                <span>Contact Club Officers</span>
+                <span>&rarr;</span>
+              </Link>
+              <Link
+                href="/events"
+                className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors text-center"
+              >
+                View Meeting Schedule
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </div>

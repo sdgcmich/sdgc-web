@@ -148,8 +148,13 @@ export async function SiteFooter() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about" className="hover:text-foreground transition-colors">
-                    Community Programs
+                  <Link href="/terms" className="hover:text-foreground transition-colors">
+                    Terms of Use
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="hover:text-foreground transition-colors">
+                    Privacy Policy
                   </Link>
                 </li>
               </ul>
@@ -157,14 +162,20 @@ export async function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-border pt-8 text-center sm:flex sm:justify-between sm:text-left">
-          <p className="text-xs text-muted-foreground">
+        <div className="mt-8 border-t border-border pt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-center sm:text-left text-xs text-muted-foreground">
+          <p>
             &copy; {currentYear} Saugatuck Douglas Garden Club. All rights reserved. Registered
             501(c)(3) nonprofit organization.
           </p>
-          <p className="mt-2 text-xs text-muted-foreground sm:mt-0">
-            Saugatuck & Douglas, Allegan County, Michigan
-          </p>
+          <div className="flex items-center justify-center sm:justify-end gap-5 text-xs font-medium">
+            <Link href="/terms" className="hover:text-foreground transition-colors">
+              Terms of Use
+            </Link>
+            <span>&bull;</span>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">
+              Privacy Policy
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

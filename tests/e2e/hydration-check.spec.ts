@@ -30,24 +30,12 @@ test.describe("Browser Hydration and Script Tag Verification", () => {
     );
     expect(hydrationErrors).toHaveLength(0);
 
-    // Verify contact form is rendered and interactive
+    // Verify contact CTA section is rendered
     const contactSection = page.locator("#contact");
     await expect(contactSection).toBeVisible();
 
-    const nameInput = page.locator("#contact-name");
-    await expect(nameInput).toBeVisible();
-    await nameInput.fill("Jane Tester");
-
-    const emailInput = page.locator("#contact-email");
-    await expect(emailInput).toBeVisible();
-    await emailInput.fill("jane.tester@example.com");
-
-    const messageInput = page.locator("#contact-message");
-    await expect(messageInput).toBeVisible();
-    await messageInput.fill("Checking browser hydration and form input fields.");
-
-    expect(await nameInput.inputValue()).toBe("Jane Tester");
-    expect(await emailInput.inputValue()).toBe("jane.tester@example.com");
+    const contactLink = contactSection.locator('a[href="/contact"]');
+    await expect(contactLink).toBeVisible();
   });
 
   test("standalone contact page loads cleanly without console or hydration errors", async ({
@@ -79,8 +67,20 @@ test.describe("Browser Hydration and Script Tag Verification", () => {
     );
     expect(hydrationErrors).toHaveLength(0);
 
+    const nameInput = page.locator("#contact-name");
+    await expect(nameInput).toBeVisible();
+    await nameInput.fill("Jane Tester");
+
     const emailInput = page.locator("#contact-email");
     await expect(emailInput).toBeVisible();
+    await emailInput.fill("jane.tester@example.com");
+
+    const messageInput = page.locator("#contact-message");
+    await expect(messageInput).toBeVisible();
+    await messageInput.fill("Checking browser hydration and form input fields.");
+
+    expect(await nameInput.inputValue()).toBe("Jane Tester");
+    expect(await emailInput.inputValue()).toBe("jane.tester@example.com");
   });
 
   test("login page loads cleanly without hydration errors even with returnTo param", async ({
