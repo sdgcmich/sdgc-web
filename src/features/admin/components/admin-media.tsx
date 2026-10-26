@@ -809,73 +809,7 @@ export function AdminMedia({ initialMedia = [], initialAlbums = [] }: AdminMedia
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
-            {/* Mobile Card List View (< md) */}
-            <div className="divide-y divide-border md:hidden">
-              {mediaList.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground text-xs">
-                  No media assets found. Upload photos above.
-                </div>
-              ) : (
-                mediaList.map((item) => (
-                  <div key={item.id} className="p-4 space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden border border-border bg-muted">
-                        <Image src={item.src} alt={item.alt} fill className="object-cover" />
-                      </div>
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-foreground text-xs truncate">
-                            {item.alt}
-                          </p>
-                          <Badge
-                            variant={item.isPublic ? "secondary" : "outline"}
-                            className="text-[10px] shrink-0"
-                          >
-                            {item.isPublic ? "Public" : "Private"}
-                          </Badge>
-                        </div>
-                        {item.caption && (
-                          <p className="text-muted-foreground line-clamp-1 text-[11px]">
-                            {item.caption}
-                          </p>
-                        )}
-                        <p className="text-muted-foreground/70 font-mono text-[10px] truncate">
-                          {item.storagePath || item.src}
-                        </p>
-                        {item.width && item.height && (
-                          <p className="text-muted-foreground text-[10px]">
-                            {item.width} × {item.height}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenEditMedia(item)}
-                        className="text-xs h-7 px-2.5"
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteMedia(item)}
-                        className="text-xs h-7 px-2.5"
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Desktop Table View (>= md) */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="overflow-x-auto overscroll-x-contain">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 font-semibold uppercase tracking-wider text-muted-foreground">
