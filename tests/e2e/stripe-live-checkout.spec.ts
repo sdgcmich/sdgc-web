@@ -3,6 +3,13 @@ import { expect, test } from "@playwright/test";
 test.describe("Live Stripe Sandbox Browser Checkout Suite", () => {
   test.setTimeout(90_000);
 
+  test.beforeEach(() => {
+    test.skip(
+      !process.env.STRIPE_SECRET_KEY || process.env.LOCAL_PAYMENTS_SIMULATION === "true",
+      "Live Stripe test requires real STRIPE_SECRET_KEY and LOCAL_PAYMENTS_SIMULATION=false",
+    );
+  });
+
   test("live browser checkout for event tickets redirects to Stripe Checkout Sandbox", async ({
     page,
   }) => {
