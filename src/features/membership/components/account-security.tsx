@@ -333,7 +333,7 @@ export function AccountSecurity({ userEmail }: AccountSecurityProps) {
           )}
 
           <div>
-            <div className="flex items-center justify-between">
+            <div className="flex h-5 items-center justify-between mb-1.5">
               <Label htmlFor="current-password" required>
                 Current Password
               </Label>
@@ -357,7 +357,7 @@ export function AccountSecurity({ userEmail }: AccountSecurityProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <div className="flex items-center justify-between">
+              <div className="flex h-5 items-center justify-between mb-1.5">
                 <Label htmlFor="new-password" required>
                   New Password
                 </Label>
@@ -380,9 +380,14 @@ export function AccountSecurity({ userEmail }: AccountSecurityProps) {
             </div>
 
             <div>
-              <Label htmlFor="confirm-password" required>
-                Confirm New Password
-              </Label>
+              <div className="flex h-5 items-center justify-between mb-1.5">
+                <Label htmlFor="confirm-password" required>
+                  Confirm New Password
+                </Label>
+                <span className="text-[11px] text-muted-foreground select-none" aria-hidden="true">
+                  &nbsp;
+                </span>
+              </div>
               <Input
                 id="confirm-password"
                 type={showNewPassword ? "text" : "password"}

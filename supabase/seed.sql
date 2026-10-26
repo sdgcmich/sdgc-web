@@ -3,7 +3,7 @@
 
 -- Site settings
 insert into public.site_settings (key, value, description) values
-  ('club_info', '{"name": "Saugatuck Douglas Garden Club", "email": "info@saugatuckdouglasgardenclub.com", "phone": "269-857-4148", "address": "P.O. Box 725, Saugatuck, MI 49453"}'::jsonb, 'General club contact details'),
+  ('club_info', '{"name": "Saugatuck Douglas Garden Club", "email": "info@saugatuckdouglasgardenclub.com", "phone": "269-857-4148", "address": "P.O. Box 1011, Douglas, MI 49406"}'::jsonb, 'General club contact details'),
   ('membership_config', '{"dues_cents": 5000, "current_year": 2026, "currency": "USD"}'::jsonb, 'Active annual dues configuration')
 on conflict (key) do update set value = excluded.value;
 

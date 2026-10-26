@@ -335,7 +335,7 @@ const ADMIN_GROUPS: NavGroup[] = [
       },
       {
         href: "/admin/dues",
-        label: "Dues & Reconciliation",
+        label: "Accounting & Financials",
         icon: CreditCardIcon,
         allowedRoles: ["admin", "treasurer"],
       },
@@ -431,25 +431,25 @@ function SidebarNavigation({
   return (
     <div className="flex h-full flex-col bg-card">
       {/* Brand Header */}
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 px-5">
-        <Link href="/admin" onClick={onNavigate} className="flex items-center space-x-3">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 px-4 min-w-0">
+        <Link href="/admin" onClick={onNavigate} className="flex items-center gap-2.5 min-w-0">
           <Image
             src={resolveMediaUrl("/images/brand/sdgc-logo.jpg")}
             alt="SDGC Logo"
-            width={36}
-            height={36}
-            className="h-9 w-9 rounded-full object-cover border border-border/60"
+            width={34}
+            height={34}
+            className="h-8.5 w-8.5 rounded-full object-cover border border-border/60 shrink-0"
           />
-          <div className="flex flex-col">
-            <span className="font-serif text-base font-bold leading-tight text-foreground">
+          <div className="flex flex-col min-w-0">
+            <span className="font-serif text-sm font-bold leading-tight text-foreground truncate">
               SDGC
             </span>
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider truncate">
               Operator Workspace
             </span>
           </div>
         </Link>
-        <span className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+        <span className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
           {activeRole}
         </span>
       </div>
@@ -605,9 +605,7 @@ export function AdminShell({
               <span className="text-sm font-semibold text-foreground">
                 SDGC &bull; Operator Workspace
               </span>
-              <span className="text-xs text-muted-foreground">
-                Staff administration &bull; Real RBAC audit enabled
-              </span>
+              <span className="text-xs text-muted-foreground">Staff administration</span>
             </div>
           </div>
 

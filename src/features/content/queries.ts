@@ -364,7 +364,7 @@ export async function getGardenWalkPageContent(): Promise<PageContent | null> {
       heroBadge: customGw?.heroBadge || "Premier Lakeshore Horticultural Event",
       priceNote:
         customGw?.priceNote ||
-        "Advance tickets: $20 • Day of tour: $25. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships.",
+        "Advance tickets: $15 • Day of tour: $20. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships.",
       valueHighlights:
         customGw?.highlights && customGw.highlights.length > 0
           ? customGw.highlights
@@ -399,7 +399,7 @@ export async function getGardenWalkPageContent(): Promise<PageContent | null> {
         "Explore the annual Saugatuck Douglas Garden Walk: tour exquisite private gardens and support local community beautification and scholarships.",
       heroBadge: "Premier Lakeshore Horticultural Event",
       priceNote:
-        "Advance tickets: $20 • Day of tour: $25. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships.",
+        "Advance tickets: $15 • Day of tour: $20. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships.",
       valueHighlights: DEFAULT_GARDEN_WALK_HIGHLIGHTS,
       visitorGuide: DEFAULT_GARDEN_WALK_VISITOR_GUIDE,
       volunteerCta: DEFAULT_GARDEN_WALK_VOLUNTEER_CTA,

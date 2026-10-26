@@ -10,6 +10,8 @@ import type {
   AdminEventRecord,
   AdminPageRecord,
   AdminMessageRecord,
+  DisbursementRecord,
+  FinancialLedgerSummary,
 } from "./types";
 
 export async function getAdminOverviewStats(): Promise<AdminMetrics> {
@@ -344,4 +346,88 @@ export async function getAdminVenues(): Promise<import("./types").AdminVenueReco
     postalCode: v.postal_code ?? undefined,
     url: v.url ?? undefined,
   }));
+}
+
+export async function getAdminDisbursements(): Promise<DisbursementRecord[]> {
+  await requireCapability(["dues.reconcile", "members.manage"]);
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("disbursements")
+    .select(
+      "id, amount_cents, category, payee, description, reference_number, disbursed_at, created_by, created_at",
+    )
+    .order("disbursed_at", { ascending: false });
+
+  if (error || !data) {
+    console.error("Error fetching disbursements:", error);
+    return [];
+  }
+
+  return data.map((d) => ({
+    id: d.id,
+    amountCents: d.amount_cents,
+    category: d.category,
+    payee: d.payee,
+    description: d.description,
+    referenceNumber: d.reference_number ?? undefined,
+    disbursedAt: d.disbursed_at,
+    createdBy: d.created_by ?? undefined,
+    createdAt: d.created_at,
+  }));
+}
+
+export async function getFinancialLedgerSummary(): Promise<FinancialLedgerSummary> {
+  await requireCapability(["dues.reconcile", "members.manage"]);
+  const supabase = await createClient();
+
+  const [duesRes, ticketsRes, disbursementsRes] = await Promise.all([
+    supabase.from("payments").select("amount_cents, status").eq("status", "confirmed"),
+    supabase
+      .from("ticket_orders")
+      .select("total_amount_cents, ticket_quantity, status")
+      .in("status", ["confirmed", "checked_in"]),
+    supabase.from("disbursements").select("amount_cents"),
+  ]);
+
+  const totalDuesRevenueCents = (duesRes.data ?? []).reduce(
+    (acc, row) => acc + (row.amount_cents || 0),
+    0,
+  );
+  const duesPaymentCount = duesRes.data?.length ?? 0;
+
+  const totalTicketRevenueCents = (ticketsRes.data ?? []).reduce(
+    (acc, row) => acc + (row.total_amount_cents || 0),
+    0,
+  );
+  const ticketOrderCount = ticketsRes.data?.length ?? 0;
+  const totalTicketsSold = (ticketsRes.data ?? []).reduce(
+    (acc, row) => acc + (row.ticket_quantity || 0),
+    0,
+  );
+
+  const totalOtherRevenueCents = 0;
+  const totalGrossRevenueCents =
+    totalDuesRevenueCents + totalTicketRevenueCents + totalOtherRevenueCents;
+
+  const totalDisbursedCents = (disbursementsRes.data ?? []).reduce(
+    (acc, row) => acc + (row.amount_cents || 0),
+    0,
+  );
+  const disbursementCount = disbursementsRes.data?.length ?? 0;
+
+  const netAvailableBalanceCents = totalGrossRevenueCents - totalDisbursedCents;
+
+  return {
+    totalDuesRevenueCents,
+    duesPaymentCount,
+    totalTicketRevenueCents,
+    ticketOrderCount,
+    totalTicketsSold,
+    totalOtherRevenueCents,
+    totalGrossRevenueCents,
+    totalDisbursedCents,
+    disbursementCount,
+    netAvailableBalanceCents,
+  };
 }

@@ -34,8 +34,8 @@ To the maximum extent permitted by Michigan law and federal 501(c)(3) provisions
 If you have questions regarding these Terms of Use, please contact us:
 
 **Saugatuck Douglas Garden Club**  
-P.O. Box 754, Douglas, MI 49453  
-Email: saugatuckdouglasgardenclub@gmail.com  
+P.O. Box 1011, Douglas, MI 49406  
+Email: info@saugatuckdouglasgardenclub.com  
 Inquiry Form: [Online Contact Hub](/contact)`;
 
 export async function generateMetadata(): Promise<Metadata> {

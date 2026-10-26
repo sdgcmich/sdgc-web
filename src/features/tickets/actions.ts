@@ -65,8 +65,8 @@ export async function getTicketEvents(): Promise<TicketEvent[]> {
             minute: "2-digit",
           }),
           location,
-          advancePriceCents: 2000,
-          dayOfPriceCents: 2500,
+          advancePriceCents: 1500,
+          dayOfPriceCents: 2000,
           description: row.description || "",
         });
       }
@@ -372,7 +372,7 @@ export async function listAdminTicketOrdersAction(filters: TicketFilterInput = {
   stats: TicketStats;
   events: TicketEvent[];
 }> {
-  await requireCapability("events.manage");
+  await requireCapability(["events.manage", "dues.reconcile"]);
   const supabase = await createClient();
 
   let query = supabase
@@ -497,7 +497,7 @@ export async function checkInTicketOrderAction(
   orderId: string,
   undo = false,
 ): Promise<ActionResult<{ status: string; checkedInAt: string | null }>> {
-  const user = await requireCapability("events.manage");
+  const user = await requireCapability(["events.manage", "dues.reconcile"]);
   const supabase = await createClient();
 
   const nowIso = new Date().toISOString();
@@ -538,7 +538,7 @@ export async function cancelTicketOrderAction(
   orderId: string,
   reason?: string,
 ): Promise<ActionResult<{ status: string }>> {
-  const user = await requireCapability("events.manage");
+  const user = await requireCapability(["events.manage", "dues.reconcile"]);
   const supabase = await createClient();
 
   const nowIso = new Date().toISOString();

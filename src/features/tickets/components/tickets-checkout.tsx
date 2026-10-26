@@ -73,8 +73,8 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
   }, [sessionId, orderRef, isSuccess, confirmedOrder]);
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) || events[0];
-  const unitPrice = selectedEvent ? selectedEvent.advancePriceCents / 100 : 20;
-  const dayOfPrice = selectedEvent ? selectedEvent.dayOfPriceCents / 100 : 25;
+  const unitPrice = selectedEvent ? selectedEvent.advancePriceCents / 100 : 15;
+  const dayOfPrice = selectedEvent ? selectedEvent.dayOfPriceCents / 100 : 20;
   const totalPrice = unitPrice * quantity;
   const totalSavings = (dayOfPrice - unitPrice) * quantity;
 

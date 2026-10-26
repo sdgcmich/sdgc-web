@@ -1,9 +1,14 @@
 import { AdminDues } from "@/features/admin/components/admin-dues";
-import { getAdminDuesRecords, getAdminTerms } from "@/features/admin/queries";
+import {
+  getAdminDuesRecords,
+  getAdminTerms,
+  getAdminDisbursements,
+  getFinancialLedgerSummary,
+} from "@/features/admin/queries";
 import { requireCapability } from "@/features/auth/authorization";
 
 export const metadata = {
-  title: "Dues & Financial Reconciliation",
+  title: "Accounting & Financial Management | SDGC Admin",
 };
 
 interface AdminDuesPageProps {
@@ -13,8 +18,19 @@ interface AdminDuesPageProps {
 export default async function AdminDuesPage({ searchParams }: AdminDuesPageProps) {
   await requireCapability("dues.reconcile", "/admin/dues");
   const params = await searchParams;
-  const [records, terms] = await Promise.all([getAdminDuesRecords(), getAdminTerms()]);
+  const [records, terms, disbursements, ledgerSummary] = await Promise.all([
+    getAdminDuesRecords(),
+    getAdminTerms(),
+    getAdminDisbursements(),
+    getFinancialLedgerSummary(),
+  ]);
   return (
-    <AdminDues initialRecords={records} initialTerms={terms} initialStatusFilter={params?.status} />
+    <AdminDues
+      initialRecords={records}
+      initialTerms={terms}
+      initialDisbursements={disbursements}
+      initialSummary={ledgerSummary}
+      initialStatusFilter={params?.status}
+    />
   );
 }

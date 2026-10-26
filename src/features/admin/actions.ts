@@ -1454,3 +1454,99 @@ export async function setAlbumCoverAction(
   revalidatePath("/admin/media");
   return { success: true, message: "Album cover image updated" };
 }
+
+export async function createDisbursementAction(input: {
+  amountDollars: string;
+  category: string;
+  payee: string;
+  description: string;
+  referenceNumber?: string;
+  disbursedAt?: string;
+}): Promise<ActionResult<{ id: string }>> {
+  const user = await requireCapability(["dues.reconcile", "members.manage"]);
+  const supabase = await createClient();
+
+  const parsedDollars = parseFloat(input.amountDollars);
+  if (Number.isNaN(parsedDollars) || parsedDollars <= 0) {
+    return { success: false, error: "Please enter a valid positive dollar amount." };
+  }
+
+  const amountCents = Math.round(parsedDollars * 100);
+  if (!input.category.trim()) {
+    return { success: false, error: "Please provide an expense/withdrawal category." };
+  }
+  if (!input.payee.trim()) {
+    return { success: false, error: "Please provide a payee or recipient name." };
+  }
+  if (!input.description.trim()) {
+    return {
+      success: false,
+      error: "Please provide a description or purpose for this withdrawal.",
+    };
+  }
+
+  const disbursedAt = input.disbursedAt
+    ? new Date(input.disbursedAt).toISOString()
+    : new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("disbursements")
+    .insert({
+      amount_cents: amountCents,
+      category: input.category.trim(),
+      payee: input.payee.trim(),
+      description: input.description.trim(),
+      reference_number: input.referenceNumber?.trim() || null,
+      disbursed_at: disbursedAt,
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    return { success: false, error: error?.message || "Failed to record disbursement." };
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: user.id,
+    action: "treasury.disbursement_created",
+    entity_type: "disbursement",
+    entity_id: data.id,
+    details: {
+      amountCents,
+      category: input.category.trim(),
+      payee: input.payee.trim(),
+      referenceNumber: input.referenceNumber?.trim(),
+    },
+  });
+
+  revalidatePath("/admin/dues");
+  revalidatePath("/admin");
+  return {
+    success: true,
+    message: "Disbursement recorded successfully in accounting books.",
+    data: { id: data.id },
+  };
+}
+
+export async function deleteDisbursementAction(id: string): Promise<ActionResult> {
+  const user = await requireCapability(["dues.reconcile", "members.manage"]);
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("disbursements").delete().eq("id", id);
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: user.id,
+    action: "treasury.disbursement_deleted",
+    entity_type: "disbursement",
+    entity_id: id,
+    details: { id },
+  });
+
+  revalidatePath("/admin/dues");
+  revalidatePath("/admin");
+  return { success: true, message: "Disbursement entry removed." };
+}

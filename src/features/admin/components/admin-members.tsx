@@ -4,6 +4,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import type { AdminMemberRecord } from "../types";
 import {
   approveMembershipAction,
@@ -218,16 +219,26 @@ export function AdminMembers({ initialMembers, initialStatusFilter }: AdminMembe
     }
   };
 
-  const filteredMembers = members.filter((m) => {
-    const matchesSearch =
-      m.name.toLowerCase().includes(filter.toLowerCase()) ||
-      m.username.toLowerCase().includes(filter.toLowerCase()) ||
-      m.email.toLowerCase().includes(filter.toLowerCase());
-    if (!matchesSearch) return false;
-    if (statusFilter === "pending") return m.applicationStatus === "pending";
-    if (statusFilter === "approved") return m.applicationStatus === "approved";
-    return true;
-  });
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(25);
+
+  const filteredMembers = React.useMemo(() => {
+    return members.filter((m) => {
+      const matchesSearch =
+        m.name.toLowerCase().includes(filter.toLowerCase()) ||
+        m.username.toLowerCase().includes(filter.toLowerCase()) ||
+        m.email.toLowerCase().includes(filter.toLowerCase());
+      if (!matchesSearch) return false;
+      if (statusFilter === "pending") return m.applicationStatus === "pending";
+      if (statusFilter === "approved") return m.applicationStatus === "approved";
+      return true;
+    });
+  }, [members, filter, statusFilter]);
+
+  const paginatedMembers = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredMembers.slice(start, start + pageSize);
+  }, [filteredMembers, currentPage, pageSize]);
 
   return (
     <div className="space-y-6">
@@ -301,82 +312,102 @@ export function AdminMembers({ initialMembers, initialStatusFilter }: AdminMembe
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredMembers.map((member) => (
-                <tr key={member.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="p-4">
-                    <span className="font-semibold text-foreground block">{member.name}</span>
-                    {member.isMasterGardener && (
-                      <span className="text-[11px] text-primary font-medium">Master Gardener</span>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <span className="font-mono text-xs block text-foreground">
-                      @{member.username}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{member.email}</span>
-                  </td>
-                  <td className="p-4">
-                    {member.paymentStatus === "confirmed" ? (
-                      <Badge variant="success">Paid ($50)</Badge>
-                    ) : (
-                      <Badge variant="outline">Unpaid</Badge>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    {member.isApproved ? (
-                      <Badge variant="default">Active / Approved</Badge>
-                    ) : (
-                      <Badge variant="warning">Pending Approval</Badge>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-1 flex-wrap items-center">
-                      {member.roles.map((r) => (
-                        <span
-                          key={r}
-                          className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase font-semibold text-muted-foreground"
-                        >
-                          {r}
-                        </span>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenRoleModal(member)}
-                        className="text-[10px] text-primary hover:underline ml-1 cursor-pointer font-medium"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </td>
-                  <td className="p-4 text-right whitespace-nowrap">
-                    <div className="inline-flex items-center justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleOpenEditProfile(member)}
-                      >
-                        Details / Edit
-                      </Button>
-                      {!member.isApproved ? (
-                        <Button
-                          size="sm"
-                          disabled={isSubmitting}
-                          onClick={() => handleApprove(member.id, member.name, member.version)}
-                        >
-                          Approve Membership
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground font-medium px-2">
-                          Approved
-                        </span>
-                      )}
-                    </div>
+              {paginatedMembers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground text-xs">
+                    No members found matching the criteria.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                paginatedMembers.map((member) => (
+                  <tr key={member.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="p-4">
+                      <span className="font-semibold text-foreground block">{member.name}</span>
+                      {member.isMasterGardener && (
+                        <span className="text-[11px] text-primary font-medium">
+                          Master Gardener
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <span className="font-mono text-xs block text-foreground">
+                        @{member.username}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{member.email}</span>
+                    </td>
+                    <td className="p-4">
+                      {member.paymentStatus === "confirmed" ? (
+                        <Badge variant="success">Paid ($50)</Badge>
+                      ) : (
+                        <Badge variant="outline">Unpaid</Badge>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      {member.isApproved ? (
+                        <Badge variant="default">Active / Approved</Badge>
+                      ) : (
+                        <Badge variant="warning">Pending Approval</Badge>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex gap-1 flex-wrap items-center">
+                        {member.roles.map((r) => (
+                          <span
+                            key={r}
+                            className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase font-semibold text-muted-foreground"
+                          >
+                            {r}
+                          </span>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenRoleModal(member)}
+                          className="text-[10px] text-primary hover:underline ml-1 cursor-pointer font-medium"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </td>
+                    <td className="p-4 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenEditProfile(member)}
+                        >
+                          Details / Edit
+                        </Button>
+                        {!member.isApproved ? (
+                          <Button
+                            size="sm"
+                            disabled={isSubmitting}
+                            onClick={() => handleApprove(member.id, member.name, member.version)}
+                          >
+                            Approve Membership
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground font-medium px-2">
+                            Approved
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+
+        <PaginationBar
+          currentPage={currentPage}
+          totalItems={filteredMembers.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[10, 25, 50]}
+          itemLabel="members"
+        />
       </div>
 
       {/* Role Management Modal */}

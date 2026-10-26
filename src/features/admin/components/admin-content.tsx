@@ -128,7 +128,7 @@ export function AdminContent({
   );
   const [gwPriceNote, setGwPriceNote] = React.useState(
     initialGardenWalkContent?.priceNote ||
-      "Advance tickets: $20 • Day of tour: $25. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships.",
+      "Advance tickets: $15 • Day of tour: $20. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships.",
   );
   const [gwHighlights, setGwHighlights] = React.useState<ValueHighlight[]>(
     initialGardenWalkContent?.valueHighlights && initialGardenWalkContent.valueHighlights.length > 0
@@ -1112,7 +1112,7 @@ export function AdminContent({
                       "Explore the annual Saugatuck Douglas Garden Walk: tour exquisite private gardens and support local community beautification and scholarships.",
                     );
                     setGwPriceNote(
-                      "Advance tickets: $20 • Day of tour: $25. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships.",
+                      "Advance tickets: $15 • Day of tour: $20. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships.",
                     );
                     setGwHighlights(DEFAULT_GARDEN_WALK_HIGHLIGHTS);
                     setGwVisitorGuide(DEFAULT_GARDEN_WALK_VISITOR_GUIDE);

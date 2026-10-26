@@ -6,6 +6,7 @@ import type { Route } from "next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { checkInTicketOrderAction, cancelTicketOrderAction } from "@/features/tickets/actions";
 import type { TicketEvent, TicketOrderListItem, TicketStats } from "@/features/tickets/types";
 
@@ -32,6 +33,10 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
   // Selected order for Detail Modal
   const [selectedOrder, setSelectedOrder] = React.useState<TicketOrderListItem | null>(null);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = React.useState<number>(1);
+  const [pageSize, setPageSize] = React.useState<number>(10);
+
   // Filter orders in memory for instantaneous search and filtering
   const filteredOrders = React.useMemo(() => {
     return orders.filter((o) => {
@@ -53,6 +58,18 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
       return true;
     });
   }, [orders, selectedEventId, selectedStatus, searchQuery]);
+
+  // Reset pagination when filter criteria change
+  React.useEffect(() => {
+    if (selectedEventId || selectedStatus || searchQuery !== undefined) {
+      setCurrentPage(1);
+    }
+  }, [selectedEventId, selectedStatus, searchQuery]);
+
+  const paginatedOrders = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredOrders.slice(start, start + pageSize);
+  }, [filteredOrders, currentPage, pageSize]);
 
   // Handle Check-in Toggle
   const handleToggleCheckIn = async (order: TicketOrderListItem) => {
@@ -410,7 +427,7 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => {
+                paginatedOrders.map((order) => {
                   const isCheckedIn = order.status === "checked_in";
                   const isCancelled = order.status === "cancelled";
 
@@ -533,6 +550,19 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
             </tbody>
           </table>
         </div>
+
+        {filteredOrders.length > 0 && (
+          <PaginationBar
+            currentPage={currentPage}
+            totalItems={filteredOrders.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+          />
+        )}
       </div>
 
       {/* Order Detail Modal */}

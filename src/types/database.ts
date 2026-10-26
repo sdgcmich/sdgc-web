@@ -92,6 +92,20 @@ isOneToOne: false
                   Relationships: [
 
                   ]
+                },"disbursements": {
+                  Row: {
+                    "amount_cents": number,"category": string,"created_at": string,"created_by": string | null,"description": string,"disbursed_at": string,"id": string,"payee": string,"reference_number": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_cents": number,"category": string,"created_at"?: string,"created_by"?: string | null,"description": string,"disbursed_at"?: string,"id"?: string,"payee": string,"reference_number"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "amount_cents"?: number,"category"?: string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"disbursed_at"?: string,"id"?: string,"payee"?: string,"reference_number"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+
+                  ]
                 },"events": {
                   Row: {
                     "all_day": boolean,"category": string | null,"created_at": string,"description": string,"ends_at": string,"excerpt": string | null,"featured_image": string | null,"id": string,"slug": string,"starts_at": string,"status": string,"ticket_url": string | null,"timezone": string,"title": string,"updated_at": string,"venue_id": string | null

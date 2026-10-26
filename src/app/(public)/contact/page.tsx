@@ -22,17 +22,17 @@ export default async function ContactPage() {
     mainEntity: {
       "@type": "Organization",
       name: contact.name || "Saugatuck Douglas Garden Club",
-      email: contact.email || "info@saugatuckdouglasgardenclub.org",
+      email: contact.email || "info@saugatuckdouglasgardenclub.com",
       telephone: contact.phone || undefined,
       address: {
         "@type": "PostalAddress",
-        streetAddress: contact.address || "PO Box 721",
-        addressLocality: contact.city || "Saugatuck",
+        streetAddress: contact.address || "P.O. Box 1011",
+        addressLocality: contact.city || "Douglas",
         addressRegion: contact.state || "MI",
-        postalCode: contact.postalCode || "49453",
+        postalCode: contact.postalCode || "49406",
         addressCountry: "US",
       },
-      url: "https://saugatuckdouglasgardenclub.org",
+      url: "https://saugatuckdouglasgardenclub.com",
     },
   };
 
@@ -177,10 +177,10 @@ export default async function ContactPage() {
                   Mailing Address
                 </span>
                 <p className="text-muted-foreground leading-relaxed">
-                  {contact.address || "P.O. Box 754"}
+                  {contact.address || "P.O. Box 1011"}
                   <br />
-                  {contact.city || "Saugatuck"}, {contact.state || "MI"}{" "}
-                  {contact.postalCode || "49453"}
+                  {contact.city || "Douglas"}, {contact.state || "MI"}{" "}
+                  {contact.postalCode || "49406"}
                 </p>
               </div>
             </div>

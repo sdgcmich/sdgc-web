@@ -101,12 +101,12 @@ export default async function GardenWalkPage() {
     organizer: {
       "@type": "Organization",
       name: "Saugatuck-Douglas Garden Club",
-      url: "https://saugatuckdouglasgardenclub.org",
+      url: "https://saugatuckdouglasgardenclub.com",
     },
     offers: {
       "@type": "Offer",
-      url: "https://saugatuckdouglasgardenclub.org/tickets-checkout",
-      price: "20.00",
+      url: "https://saugatuckdouglasgardenclub.com/tickets-checkout",
+      price: "15.00",
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       validFrom: "2026-01-01T00:00:00-04:00",
@@ -166,7 +166,7 @@ export default async function GardenWalkPage() {
               </p>
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-foreground text-xs sm:text-sm font-medium">
                 {walk.priceNote ||
-                  "Advance tickets: $20 • Day of tour: $25. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships."}
+                  "Advance tickets: $15 • Day of tour: $20. All ticket proceeds directly fund club civic beautification planters, parks, and youth horticulture scholarships."}
               </div>
             </div>
           </div>

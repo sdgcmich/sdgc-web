@@ -7,6 +7,7 @@ import type { MediaItem, AlbumSummary } from "@/features/media/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import {
   createMediaAssetAction,
   updateMediaAssetAction,
@@ -36,6 +37,15 @@ export function AdminMedia({ initialMedia = [], initialAlbums = [] }: AdminMedia
   const [activeTab, setActiveTab] = React.useState<"albums" | "media">("albums");
   const [mediaList, setMediaList] = React.useState<MediaItem[]>(initialMedia);
   const [albumsList, setAlbumsList] = React.useState<AlbumSummary[]>(initialAlbums);
+
+  // Media pagination
+  const [mediaPage, setMediaPage] = React.useState(1);
+  const [mediaPageSize, setMediaPageSize] = React.useState(10);
+
+  const paginatedMedia = React.useMemo(() => {
+    const start = (mediaPage - 1) * mediaPageSize;
+    return mediaList.slice(start, start + mediaPageSize);
+  }, [mediaList, mediaPage, mediaPageSize]);
 
   const [notice, setNotice] = React.useState<string | null>(null);
   const [isError, setIsError] = React.useState(false);
@@ -838,7 +848,7 @@ export function AdminMedia({ initialMedia = [], initialAlbums = [] }: AdminMedia
                       </td>
                     </tr>
                   ) : (
-                    mediaList.map((item) => (
+                    paginatedMedia.map((item) => (
                       <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                         <td className="p-3 w-20">
                           <div className="relative h-14 w-14 rounded-lg overflow-hidden border border-border bg-muted">
@@ -893,6 +903,19 @@ export function AdminMedia({ initialMedia = [], initialAlbums = [] }: AdminMedia
                 </tbody>
               </table>
             </div>
+
+            {mediaList.length > 0 && (
+              <PaginationBar
+                currentPage={mediaPage}
+                totalItems={mediaList.length}
+                pageSize={mediaPageSize}
+                onPageChange={setMediaPage}
+                onPageSizeChange={(newSize) => {
+                  setMediaPageSize(newSize);
+                  setMediaPage(1);
+                }}
+              />
+            )}
           </div>
         </div>
       )}

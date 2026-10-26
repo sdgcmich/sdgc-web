@@ -43,8 +43,8 @@ If you have questions, concerns, or requests regarding this Privacy Policy or ho
 
 **Saugatuck Douglas Garden Club**  
 Attention: Club Officers & Privacy Team  
-P.O. Box 754, Douglas, MI 49453  
-Email: saugatuckdouglasgardenclub@gmail.com  
+P.O. Box 1011, Douglas, MI 49406  
+Email: info@saugatuckdouglasgardenclub.com  
 Inquiry Form: [Online Contact Hub](/contact)`;
 
 export async function generateMetadata(): Promise<Metadata> {

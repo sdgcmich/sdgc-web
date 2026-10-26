@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminTicketsPage() {
-  await requireCapability("events.manage", "/admin/tickets");
+  await requireCapability(["events.manage", "dues.reconcile"], "/admin/tickets");
   const { orders, stats, events } = await listAdminTicketOrdersAction();
 
   return <AdminTickets initialOrders={orders} initialStats={stats} initialEvents={events} />;

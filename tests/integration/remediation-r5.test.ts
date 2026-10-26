@@ -150,8 +150,8 @@ describe("Remediation Package R5 — Legacy Routes, Ticketing & Importer Reconci
           e.slug.includes("garden-walk"),
       );
       expect(gardenWalk).toBeDefined();
-      expect(gardenWalk?.advancePriceCents).toBe(2000); // $20.00
-      expect(gardenWalk?.dayOfPriceCents).toBe(2500); // $25.00
+      expect(gardenWalk?.advancePriceCents).toBe(1500); // $15.00
+      expect(gardenWalk?.dayOfPriceCents).toBe(2000); // $20.00
     });
 
     it("processes ticket orders with order reference and check-in instructions", async () => {
@@ -171,8 +171,8 @@ describe("Remediation Package R5 — Legacy Routes, Ticketing & Importer Reconci
 
       expect(order.orderReference).toMatch(/^SDGC-TKT-202[67]-[A-F0-9]{6}$/);
       expect(order.ticketQuantity).toBe(3);
-      expect(order.unitPriceCents).toBe(2000);
-      expect(order.totalCents).toBe(6000); // 3 * $20.00 = $60.00
+      expect(order.unitPriceCents).toBe(1500);
+      expect(order.totalCents).toBe(4500); // 3 * $15.00 = $45.00
       expect(order.purchaserName).toBe("Alice Public");
       expect(order.purchaserEmail).toBe(testEmail);
       expect(order.status).toBe("confirmed");

@@ -4,6 +4,7 @@ import * as React from "react";
 import type { AdminMessageRecord } from "../types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { updateMessageStatusAction } from "../actions";
 
 interface AdminMessagesProps {
@@ -18,6 +19,9 @@ export function AdminMessages({ initialMessages, initialFilter }: AdminMessagesP
   );
   const [filter, setFilter] = React.useState<string>(initialFilter || "all");
   const [notice, setNotice] = React.useState<string | null>(null);
+
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
 
   React.useEffect(() => {
     setMessages(initialMessages);
@@ -36,6 +40,16 @@ export function AdminMessages({ initialMessages, initialFilter }: AdminMessagesP
     if (filter === "archived") return messages.filter((m) => m.status === "archived");
     return messages;
   }, [messages, filter]);
+
+  const paginatedMessages = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredMessages.slice(start, start + pageSize);
+  }, [filteredMessages, currentPage, pageSize]);
+
+  const handleFilterChange = (newFilter: string) => {
+    setFilter(newFilter);
+    setCurrentPage(1);
+  };
 
   const handleStatusChange = async (id: string, newStatus: "unread" | "read" | "archived") => {
     const res = await updateMessageStatusAction(id, newStatus);
@@ -66,87 +80,102 @@ export function AdminMessages({ initialMessages, initialFilter }: AdminMessagesP
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Messages List */}
-        <div className="md:col-span-1 rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden divide-y divide-border/60">
-          <div className="p-3 bg-muted/40 flex items-center justify-between gap-2 border-b border-border/60">
-            <span className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-              Inquiries ({filteredMessages.length})
-            </span>
-            <div className="inline-flex rounded-lg border border-border/60 bg-muted/50 p-0.5 text-[11px]">
-              {[
-                { id: "all", label: "All" },
-                { id: "unread", label: "Unread" },
-                { id: "read", label: "Read" },
-                { id: "archived", label: "Archived" },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setFilter(f.id)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer ${
-                    filter === f.id
-                      ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
+        <div className="md:col-span-1 rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="p-3 bg-muted/40 flex items-center justify-between gap-2 border-b border-border/60">
+              <span className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                Inquiries ({filteredMessages.length})
+              </span>
+              <div className="inline-flex rounded-lg border border-border/60 bg-muted/50 p-0.5 text-[11px]">
+                {[
+                  { id: "all", label: "All" },
+                  { id: "unread", label: "Unread" },
+                  { id: "read", label: "Read" },
+                  { id: "archived", label: "Archived" },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => handleFilterChange(f.id)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer ${
+                      filter === f.id
+                        ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="divide-y divide-border/60">
+              {paginatedMessages.length === 0 ? (
+                <div className="p-6 text-center text-xs text-muted-foreground">
+                  No inquiries match the current filter.
+                </div>
+              ) : (
+                paginatedMessages.map((m) => {
+                  const isSelected = activeMessage?.id === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedMessageId(m.id);
+                        if (m.status === "unread") {
+                          handleStatusChange(m.id, "read");
+                        }
+                      }}
+                      className={`w-full text-left p-4 transition-colors hover:bg-muted/30 cursor-pointer ${
+                        isSelected ? "bg-primary/10 border-l-4 border-primary" : ""
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-semibold text-sm text-foreground truncate max-w-[150px]">
+                          {m.name}
+                        </span>
+                        {m.status === "unread" ? (
+                          <Badge variant="warning">New</Badge>
+                        ) : m.status === "archived" ? (
+                          <Badge variant="outline">Archived</Badge>
+                        ) : (
+                          <Badge variant="secondary">Read</Badge>
+                        )}
+                      </div>
+
+                      {m.subject && (
+                        <p className="text-xs font-medium text-foreground truncate mb-0.5">
+                          {m.subject}
+                        </p>
+                      )}
+
+                      <p className="text-xs text-muted-foreground line-clamp-2">{m.message}</p>
+
+                      <div className="flex items-center justify-between gap-1 mt-2 text-[10px] text-muted-foreground">
+                        <span>{new Date(m.createdAt).toLocaleDateString()}</span>
+                        {m.category && (
+                          <span className="font-medium bg-muted px-1.5 py-0.5 rounded text-foreground/80 truncate max-w-[120px]">
+                            {m.category}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
-          {filteredMessages.length === 0 ? (
-            <div className="p-6 text-center text-xs text-muted-foreground">
-              No inquiries match the current filter.
-            </div>
-          ) : (
-            filteredMessages.map((m) => {
-              const isSelected = activeMessage?.id === m.id;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedMessageId(m.id);
-                    if (m.status === "unread") {
-                      handleStatusChange(m.id, "read");
-                    }
-                  }}
-                  className={`w-full text-left p-4 transition-colors hover:bg-muted/30 cursor-pointer ${
-                    isSelected ? "bg-primary/10 border-l-4 border-primary" : ""
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-semibold text-sm text-foreground truncate max-w-[150px]">
-                      {m.name}
-                    </span>
-                    {m.status === "unread" ? (
-                      <Badge variant="warning">New</Badge>
-                    ) : m.status === "archived" ? (
-                      <Badge variant="outline">Archived</Badge>
-                    ) : (
-                      <Badge variant="secondary">Read</Badge>
-                    )}
-                  </div>
 
-                  {m.subject && (
-                    <p className="text-xs font-medium text-foreground truncate mb-0.5">
-                      {m.subject}
-                    </p>
-                  )}
-
-                  <p className="text-xs text-muted-foreground line-clamp-2">{m.message}</p>
-
-                  <div className="flex items-center justify-between gap-1 mt-2 text-[10px] text-muted-foreground">
-                    <span>{new Date(m.createdAt).toLocaleDateString()}</span>
-                    {m.category && (
-                      <span className="font-medium bg-muted px-1.5 py-0.5 rounded text-foreground/80 truncate max-w-[120px]">
-                        {m.category}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })
-          )}
+          <PaginationBar
+            currentPage={currentPage}
+            totalItems={filteredMessages.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[5, 10, 20]}
+            itemLabel="inquiries"
+          />
         </div>
 
         {/* Message Detail Pane */}

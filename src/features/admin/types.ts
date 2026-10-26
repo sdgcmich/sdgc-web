@@ -127,3 +127,28 @@ export interface AdminAuditEntry {
   createdAt: string;
   details?: Record<string, unknown>;
 }
+
+export interface DisbursementRecord {
+  id: string;
+  amountCents: number;
+  category: string;
+  payee: string;
+  description: string;
+  referenceNumber?: string;
+  disbursedAt: string;
+  createdBy?: string;
+  createdAt: string;
+}
+
+export interface FinancialLedgerSummary {
+  totalDuesRevenueCents: number;
+  duesPaymentCount: number;
+  totalTicketRevenueCents: number;
+  ticketOrderCount: number;
+  totalTicketsSold: number;
+  totalOtherRevenueCents: number;
+  totalGrossRevenueCents: number;
+  totalDisbursedCents: number;
+  disbursementCount: number;
+  netAvailableBalanceCents: number;
+}
