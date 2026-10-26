@@ -1,16 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import type { TicketEvent, TicketOrder } from "../types";
-import { processTicketOrderAction } from "../actions";
+import { processTicketOrderAction, getTicketOrderByReferenceAction } from "../actions";
 
 interface TicketsCheckoutProps {
   events: TicketEvent[];
 }
 
 export function TicketsCheckout({ events }: TicketsCheckoutProps) {
+  const searchParams = useSearchParams();
+  const orderRef = searchParams.get("order_ref");
+  const isSuccess = searchParams.get("success") === "true";
+
   const [selectedEventId, setSelectedEventId] = useState<string>(events[0]?.id || "gw-2026");
   const [quantity, setQuantity] = useState<number>(2);
   const [purchaserName, setPurchaserName] = useState<string>("");
@@ -20,6 +25,18 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [confirmedOrder, setConfirmedOrder] = useState<TicketOrder | null>(null);
+
+  useEffect(() => {
+    if (orderRef && isSuccess && !confirmedOrder) {
+      setIsSubmitting(true);
+      getTicketOrderByReferenceAction(orderRef).then((res) => {
+        setIsSubmitting(false);
+        if (res.success && res.data) {
+          setConfirmedOrder(res.data);
+        }
+      });
+    }
+  }, [orderRef, isSuccess, confirmedOrder]);
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) || events[0];
   const unitPrice = selectedEvent ? selectedEvent.advancePriceCents / 100 : 20;
@@ -56,6 +73,10 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
       if (!res.success) {
         setErrorMessage(res.error || "Failed to process ticket order.");
       } else if (res.data) {
+        if (res.data.checkoutUrl) {
+          window.location.href = res.data.checkoutUrl;
+          return;
+        }
         setConfirmedOrder(res.data);
       }
     } catch {
@@ -82,14 +103,22 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
           </div>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/25 px-3 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300">
-            Preview Mode • Simulated Order Confirmed
+          <div
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+              confirmedOrder.status === "confirmed"
+                ? "bg-emerald-500/15 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300"
+                : "bg-amber-500/15 border border-amber-500/25 text-amber-800 dark:text-amber-300"
+            }`}
+          >
+            {confirmedOrder.status === "confirmed"
+              ? "Verified Order Confirmed • Stripe Checkout"
+              : "Preview Mode • Simulated Order Confirmed"}
           </div>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
             Advance Tour Reservation Confirmed!
           </h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Thank you for supporting the Saugatuck Douglas Garden Club. Your simulated event pass is
+            Thank you for supporting the Saugatuck Douglas Garden Club. Your official event pass is
             ready below.
           </p>
         </div>
@@ -200,12 +229,34 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <a
+              href={`/api/tickets/${confirmedOrder.orderReference}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 rounded-2xl bg-primary px-5 py-3.5 text-center text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+            >
+              <svg
+                aria-hidden="true"
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Download Ticket Pass (PDF)
+            </a>
             <button
               type="button"
               onClick={() => window.print()}
-              className="flex-1 rounded-2xl bg-primary px-5 py-3.5 text-center text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors cursor-pointer"
+              className="rounded-2xl border border-border bg-card px-5 py-3.5 text-center text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
-              Print / Save Pass
+              Print Pass
             </button>
             <button
               type="button"
@@ -215,7 +266,7 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
               }}
               className="rounded-2xl border border-border bg-card px-5 py-3.5 text-center text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
-              Order More Tickets
+              Order More
             </button>
           </div>
         </div>

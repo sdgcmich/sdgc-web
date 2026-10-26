@@ -340,14 +340,14 @@ isOneToOne: false
                   ]
                 },"ticket_orders": {
                   Row: {
-                    "checked_in_at": string | null,"checked_in_by": string | null,"created_at": string,"event_id": string | null,"id": string,"notes": string | null,"order_reference": string,"purchaser_email": string,"purchaser_name": string,"purchaser_phone": string | null,"status": string,"ticket_quantity": number,"total_amount_cents": number,"unit_price_cents": number,"updated_at": string
+                    "checked_in_at": string | null,"checked_in_by": string | null,"created_at": string,"event_id": string | null,"id": string,"notes": string | null,"order_reference": string,"purchaser_email": string,"purchaser_name": string,"purchaser_phone": string | null,"status": string,"stripe_payment_intent_id": string | null,"stripe_session_id": string | null,"ticket_quantity": number,"total_amount_cents": number,"unit_price_cents": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"event_id"?: string | null,"id"?: string,"notes"?: string | null,"order_reference": string,"purchaser_email": string,"purchaser_name": string,"purchaser_phone"?: string | null,"status"?: string,"ticket_quantity": number,"total_amount_cents": number,"unit_price_cents"?: number,"updated_at"?: string
+                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"event_id"?: string | null,"id"?: string,"notes"?: string | null,"order_reference": string,"purchaser_email": string,"purchaser_name": string,"purchaser_phone"?: string | null,"status"?: string,"stripe_payment_intent_id"?: string | null,"stripe_session_id"?: string | null,"ticket_quantity": number,"total_amount_cents": number,"unit_price_cents"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"event_id"?: string | null,"id"?: string,"notes"?: string | null,"order_reference"?: string,"purchaser_email"?: string,"purchaser_name"?: string,"purchaser_phone"?: string | null,"status"?: string,"ticket_quantity"?: number,"total_amount_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string
+                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"event_id"?: string | null,"id"?: string,"notes"?: string | null,"order_reference"?: string,"purchaser_email"?: string,"purchaser_name"?: string,"purchaser_phone"?: string | null,"status"?: string,"stripe_payment_intent_id"?: string | null,"stripe_session_id"?: string | null,"ticket_quantity"?: number,"total_amount_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {

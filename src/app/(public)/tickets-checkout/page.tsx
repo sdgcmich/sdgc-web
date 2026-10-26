@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getTicketEvents } from "@/features/tickets/actions";
 import { TicketsCheckout } from "@/features/tickets/components/tickets-checkout";
@@ -13,7 +14,13 @@ export default async function TicketsCheckoutPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-      <TicketsCheckout events={events} />
+      <Suspense
+        fallback={
+          <div className="py-12 text-center text-sm text-muted-foreground">Loading checkout...</div>
+        }
+      >
+        <TicketsCheckout events={events} />
+      </Suspense>
     </div>
   );
 }

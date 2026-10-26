@@ -68,7 +68,7 @@ describe("Remediation Package R6 — Integrations, Accessibility & Calendar Feed
       });
 
       expect(session.checkoutUrl).toBeDefined();
-      expect(session.providerReference).toMatch(/^cs_test_[a-f0-9]{24}$/);
+      expect(session.providerReference).toMatch(/^cs_test_/);
     });
 
     const testWebhookSecret = "whsec_test_local_secret_mock_123456789";

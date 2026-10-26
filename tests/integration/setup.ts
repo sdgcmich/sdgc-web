@@ -27,6 +27,9 @@ if (fs.existsSync(".env.local")) {
         if (key === "SUPABASE_SERVICE_ROLE_KEY" || key === "SUPABASE_SECRET_KEY") {
           serviceRoleKey = val;
         }
+        if (process.env[key] === undefined) {
+          process.env[key] = val;
+        }
       }
     }
   }
