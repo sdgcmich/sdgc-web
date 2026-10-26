@@ -5,7 +5,7 @@
  * directly against the local Docker Supabase MCP endpoint on port 54321.
  */
 
-const ENDPOINT = process.env.SUPABASE_MCP_URL || "http://127.0.0.1:54321/mcp";
+const ENDPOINT = process.env.SUPABASE_MCP_URL || "https://mcp.supabase.com/mcp";
 
 async function callTool(name, args = {}) {
   const res = await fetch(ENDPOINT, {

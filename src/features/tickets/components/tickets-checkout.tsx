@@ -252,8 +252,8 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
               Pass Holder Information
             </h4>
             <p className="font-medium text-foreground">
-              {confirmedOrder.purchaserName} &bull; {confirmedOrder.purchaserEmail}
-              {confirmedOrder.purchaserPhone && ` &bull; ${confirmedOrder.purchaserPhone}`}
+              {confirmedOrder.purchaserName} • {confirmedOrder.purchaserEmail}
+              {confirmedOrder.purchaserPhone && ` • ${confirmedOrder.purchaserPhone}`}
             </p>
           </div>
 
