@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireCapability } from "@/features/auth/authorization";
 import type { Database, Json } from "@/types/database";
 import { optimizeImage } from "@/lib/media/optimizer";
@@ -237,6 +238,333 @@ export async function setUserRolesAction(input: {
 
   revalidatePath("/admin/members");
   return { success: true, message: "User roles updated successfully" };
+}
+
+export interface AdminCreateMemberInput {
+  email: string;
+  fullName: string;
+  username?: string;
+  phone?: string;
+  role?: "member" | "editor" | "treasurer" | "admin";
+  status?: "approved" | "pending";
+  waiveDues?: boolean;
+  password?: string;
+  sendRecoveryEmail?: boolean;
+}
+
+export async function adminCreateMemberAction(
+  input: AdminCreateMemberInput,
+): Promise<ActionResult<{ userId: string; recoveryLink?: string }>> {
+  const actor = await requireCapability("members.manage");
+  const supabase = await createClient();
+  const adminClient = createAdminClient();
+
+  const trimmedEmail = input.email?.trim().toLowerCase();
+  if (!trimmedEmail?.includes("@")) {
+    return { success: false, error: "A valid email address is required" };
+  }
+
+  const trimmedName = input.fullName?.trim();
+  if (!trimmedName || trimmedName.length < 2) {
+    return { success: false, error: "Full name is required" };
+  }
+
+  const parts = trimmedName.split(/\s+/);
+  const firstName = parts[0] || "Member";
+  const lastName = parts.slice(1).join(" ") || "Friend";
+
+  let username = input.username
+    ?.trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "");
+  if (!username) {
+    const emailPrefix = trimmedEmail.split("@")[0] ?? "member";
+    const base = emailPrefix.replace(/[^a-z0-9_]/g, "") || "member";
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    username = `${base}_${randSuffix}`;
+  }
+
+  // Check username collision in profiles
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (existingProfile) {
+    username = `${username}_${Math.floor(100 + Math.random() * 900)}`;
+  }
+
+  const tempPassword = input.password?.trim() || `${crypto.randomUUID()}!Aa1`;
+
+  // Create Auth User
+  const { data: userData, error: createErr } = await adminClient.auth.admin.createUser({
+    email: trimmedEmail,
+    password: tempPassword,
+    email_confirm: true,
+    user_metadata: {
+      first_name: firstName,
+      last_name: lastName,
+      username,
+      phone: input.phone?.trim() || null,
+    },
+  });
+
+  if (createErr || !userData.user) {
+    return {
+      success: false,
+      error: createErr?.message || "Failed to create user account in authentication service",
+    };
+  }
+
+  const newUserId = userData.user.id;
+
+  // Retrieve the membership created by on_auth_user_created trigger
+  const { data: membership } = await adminClient
+    .from("memberships")
+    .select("id, term_id")
+    .eq("user_id", newUserId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const isApproved = input.status !== "pending";
+
+  if (membership) {
+    await adminClient
+      .from("memberships")
+      .update({
+        status: isApproved ? "approved" : "pending",
+        approved_at: isApproved ? new Date().toISOString() : null,
+        approved_by: isApproved ? actor.id : null,
+        notes: input.waiveDues ? "Created by admin (dues waived)" : "Created by admin",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", membership.id);
+
+    if (input.waiveDues && isApproved) {
+      await adminClient.from("payments").insert({
+        membership_id: membership.id,
+        user_id: newUserId,
+        term_id: membership.term_id,
+        amount_cents: 5000,
+        currency: "USD",
+        payment_method: "check",
+        provider: "admin_manual",
+        status: "confirmed",
+        reconciled_at: new Date().toISOString(),
+        reconciled_by: actor.id,
+        notes: "Comped / Waived by administrator on creation",
+      });
+    }
+  }
+
+  // Assign role if privileged role requested
+  if (input.role && input.role !== "member") {
+    await supabase.rpc("set_user_roles", {
+      p_target_user_id: newUserId,
+      p_new_roles: [input.role],
+    });
+  }
+
+  // Generate recovery link if requested or if no password provided
+  let recoveryLink: string | undefined;
+  if (input.sendRecoveryEmail || !input.password) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
+    try {
+      const { data: linkData } = await adminClient.auth.admin.generateLink({
+        type: "recovery",
+        email: trimmedEmail,
+        options: {
+          redirectTo: `${siteUrl}/reset-password`,
+        },
+      });
+      recoveryLink = linkData?.properties?.action_link;
+    } catch (e) {
+      console.warn("Could not generate recovery link:", e);
+    }
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: actor.id,
+    action: "member.created_by_admin",
+    entity_type: "member",
+    entity_id: newUserId,
+    details: {
+      email: trimmedEmail,
+      username,
+      role: input.role || "member",
+      status: isApproved ? "approved" : "pending",
+      waiveDues: Boolean(input.waiveDues),
+    },
+  });
+
+  revalidatePath("/admin/members");
+  revalidatePath("/admin");
+  revalidatePath("/directory");
+
+  return {
+    success: true,
+    message: `Account for ${trimmedName} (${trimmedEmail}) successfully created.`,
+    data: {
+      userId: newUserId,
+      recoveryLink,
+    },
+  };
+}
+
+export async function adminToggleMemberBanAction(input: {
+  userId: string;
+  membershipId: string;
+  suspend: boolean;
+  reason?: string;
+}): Promise<ActionResult> {
+  const actor = await requireCapability("members.manage");
+  const supabase = await createClient();
+  const adminClient = createAdminClient();
+
+  if (input.suspend) {
+    // Check if target has admin role and protect last admin
+    const { count, error: countErr } = await supabase
+      .from("user_roles")
+      .select("user_id", { count: "exact", head: true })
+      .eq("role", "admin")
+      .neq("user_id", input.userId);
+
+    const { data: targetAdmin } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", input.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (targetAdmin && (countErr || (count !== null && count < 1))) {
+      return { success: false, error: "Cannot suspend or ban the last administrator" };
+    }
+
+    const { error: memErr } = await supabase
+      .from("memberships")
+      .update({
+        status: "suspended",
+        notes: input.reason?.trim()
+          ? `Suspended: ${input.reason.trim()}`
+          : "Suspended by administrator",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", input.membershipId);
+
+    if (memErr) {
+      return { success: false, error: memErr.message };
+    }
+
+    const { error: banErr } = await adminClient.auth.admin.updateUserById(input.userId, {
+      ban_duration: "876000h",
+    });
+
+    if (banErr) {
+      console.warn("Auth ban notice:", banErr.message);
+    }
+
+    await supabase.from("audit_events").insert({
+      actor_id: actor.id,
+      action: "member.suspended",
+      entity_type: "member",
+      entity_id: input.userId,
+      details: { membership_id: input.membershipId, reason: input.reason?.trim() },
+    });
+
+    revalidatePath("/admin/members");
+    revalidatePath("/admin");
+    revalidatePath("/directory");
+    return {
+      success: true,
+      message: "Member account has been suspended and banned from signing in.",
+    };
+  }
+
+  const { error: memErr } = await supabase
+    .from("memberships")
+    .update({
+      status: "approved",
+      notes: "Reinstated by administrator",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.membershipId);
+
+  if (memErr) {
+    return { success: false, error: memErr.message };
+  }
+
+  const { error: unbanErr } = await adminClient.auth.admin.updateUserById(input.userId, {
+    ban_duration: "none",
+  });
+
+  if (unbanErr) {
+    console.warn("Auth unban notice:", unbanErr.message);
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: actor.id,
+    action: "member.reinstated",
+    entity_type: "member",
+    entity_id: input.userId,
+    details: { membership_id: input.membershipId },
+  });
+
+  revalidatePath("/admin/members");
+  revalidatePath("/admin");
+  revalidatePath("/directory");
+  return {
+    success: true,
+    message: "Member account has been reinstated and access restored.",
+  };
+}
+
+export async function adminRecoverMemberAccountAction(input: {
+  userId: string;
+  email: string;
+}): Promise<ActionResult<{ recoveryLink?: string }>> {
+  const actor = await requireCapability("members.manage");
+  const adminClient = createAdminClient();
+  const supabase = await createClient();
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
+
+  const { data, error } = await adminClient.auth.admin.generateLink({
+    type: "recovery",
+    email: input.email.trim(),
+    options: {
+      redirectTo: `${siteUrl}/reset-password`,
+    },
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  try {
+    await supabase.auth.resetPasswordForEmail(input.email.trim(), {
+      redirectTo: `${siteUrl}/reset-password`,
+    });
+  } catch (err) {
+    console.warn("Direct password reset dispatch note:", err);
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: actor.id,
+    action: "member.recovery_requested",
+    entity_type: "member",
+    entity_id: input.userId,
+    details: { email: input.email.trim() },
+  });
+
+  return {
+    success: true,
+    message: `Password recovery link successfully generated for ${input.email}.`,
+    data: {
+      recoveryLink: data?.properties?.action_link,
+    },
+  };
 }
 
 export async function deleteEventAction(id: string): Promise<ActionResult> {

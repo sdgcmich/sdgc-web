@@ -29,10 +29,11 @@ export async function SiteFooter() {
               Dedicated to civic beautification, horticultural education, youth outreach, and
               friendship across Saugatuck and Douglas, Michigan.
             </p>
-            <p className="mt-4 text-xs text-muted-foreground">
+            <p className="mt-4 text-xs text-muted-foreground leading-relaxed">
               Official Mailing Address: {contact.address}, {contact.city}, {contact.state}{" "}
               {contact.postalCode}
               {contact.phone && ` • Tel: ${contact.phone}`}
+              {contact.email && ` • Email: ${contact.email}`}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-4">
               {contact.facebookUrl && (
@@ -148,13 +149,16 @@ export async function SiteFooter() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/terms" className="hover:text-foreground transition-colors">
-                    Terms of Use
-                  </Link>
+                  <a
+                    href={`mailto:${contact.email || "info@saugatuckdouglasgardenclub.com"}`}
+                    className="hover:text-foreground transition-colors truncate block"
+                  >
+                    Email Our Team
+                  </a>
                 </li>
                 <li>
-                  <Link href="/privacy" className="hover:text-foreground transition-colors">
-                    Privacy Policy
+                  <Link href="/notices" className="hover:text-foreground transition-colors">
+                    Club Notices
                   </Link>
                 </li>
               </ul>

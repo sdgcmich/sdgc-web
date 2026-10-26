@@ -1,6 +1,6 @@
 import { AdminMembers } from "@/features/admin/components/admin-members";
 import { getAdminMembers } from "@/features/admin/queries";
-import { requireCapability } from "@/features/auth/authorization";
+import { requireCapability, hasCapability } from "@/features/auth/authorization";
 
 export const metadata = {
   title: "Member Roster & Approvals",
@@ -11,8 +11,11 @@ interface AdminMembersPageProps {
 }
 
 export default async function AdminMembersPage({ searchParams }: AdminMembersPageProps) {
-  await requireCapability(["members.manage", "memberships.approve"], "/admin/members");
+  const user = await requireCapability(["members.manage", "memberships.approve"], "/admin/members");
+  const isAdmin = await hasCapability("roles.manage", user.id);
   const params = await searchParams;
   const members = await getAdminMembers();
-  return <AdminMembers initialMembers={members} initialStatusFilter={params?.status} />;
+  return (
+    <AdminMembers initialMembers={members} initialStatusFilter={params?.status} isAdmin={isAdmin} />
+  );
 }
