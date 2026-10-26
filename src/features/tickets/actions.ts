@@ -253,7 +253,7 @@ export async function processTicketOrderAction(
       notes: input.notes || null,
       createdAt: insertedOrder.created_at,
       checkInInstructions:
-        "SIMULATED ORDER ONLY (No Payment Collected). Please bring this confirmation pass or mobile QR code to the Tour Check-In Table on the morning of the event.",
+        "SIMULATED ORDER ONLY (No Payment Collected). Please bring this confirmation pass or mobile QR code to the Tour Check-In Table at Saugatuck City Hall on the morning of the event.",
     };
 
     safeRevalidatePath("/admin/tickets");
