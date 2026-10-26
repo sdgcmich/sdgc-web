@@ -50,12 +50,16 @@ export default async function NotFound() {
               <path d="M12 8v4" />
               <path d="M12 16h.01" />
             </svg>
-            <span>404 • Page Not Found</span>
+            <span>Notice • Missing Garden Path</span>
           </div>
 
           <h1 className="mt-6 font-serif text-3xl sm:text-5xl font-bold tracking-tight text-foreground">
-            You&apos;ve Wandered Off The Garden Path
+            Page not found
           </h1>
+
+          <p className="mt-2 text-xl font-serif text-primary">
+            You&apos;ve Wandered Off The Garden Path
+          </p>
 
           <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto">
             The page, article, or resource you are looking for may have been pruned, relocated, or
@@ -68,7 +72,7 @@ export default async function NotFound() {
               href="/"
               className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
             >
-              Return Home
+              Return home
             </Link>
             <Link
               href="/events"
