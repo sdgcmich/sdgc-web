@@ -30,14 +30,17 @@ This remediation package addresses key user feedback across administrative workf
 ## 2. Changes by Component
 
 ### A. Admin Shell & Navigation (`src/features/admin/components/admin-shell.tsx`)
+
 - Constrained user title and role badges with `truncate`, `min-w-0`, and `shrink-0` to avoid horizontal overflow on compact viewports.
 - Cleaned up top-bar branding by removing diagnostic text.
 - Maintained `"Dues & Reconciliation"` navigation entry linked to `/admin/dues` to satisfy existing RBAC navigation contracts and test suites.
 
 ### B. Inline Password Fields (`src/features/membership/components/account-security.tsx`)
+
 - Changed New Password and Confirm Password inputs into an inline two-column grid layout aligned to the same baseline with consistent height and focus rings.
 
 ### C. Reusable Pagination (`src/components/ui/pagination-bar.tsx`)
+
 - Generic client component supporting arbitrary items per page (`10`, `25`, `50`).
 - Provides previous (`<`) and next (`>`) buttons with boundary disabling and accessible ARIA attributes.
 - Integrated into:
@@ -48,6 +51,7 @@ This remediation package addresses key user feedback across administrative workf
   - `admin-dues.tsx`
 
 ### D. Treasury Ledger & Database Schema
+
 - **Migration**: `supabase/migrations/20261026104144_financial_disbursements_and_accounting.sql`
   - Creates table `public.disbursements` (`id`, `amount_cents`, `payee`, `category`, `description`, `reference_number`, `disbursed_at`, `created_by`, `created_at`, `updated_at`).
   - Enables Row Level Security (RLS) with explicit SELECT/INSERT/UPDATE/DELETE policies for authenticated users possessing `dues.reconcile` or `admin` capabilities.
@@ -57,6 +61,7 @@ This remediation package addresses key user feedback across administrative workf
   - `createDisbursementAction` / `deleteDisbursementAction`: Server actions protected by role capabilities and CSRF tokens.
 
 ### E. Live Site Parity Alignment
+
 - Updated Garden Walk ticket prices across `tickets/actions.ts`, `tickets-checkout.tsx`, `garden-walk/page.tsx`, and `content/queries.ts` to **$15.00** advance and **$20.00** day-of.
 - Replaced outdated PO Box references with **P.O. Box 1011, Douglas, MI 49406** across public contact forms, legal terms, privacy policy, and seed migration scripts.
 
