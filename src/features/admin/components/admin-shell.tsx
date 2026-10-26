@@ -335,7 +335,7 @@ const ADMIN_GROUPS: NavGroup[] = [
       },
       {
         href: "/admin/dues",
-        label: "Accounting & Financials",
+        label: "Dues & Reconciliation",
         icon: CreditCardIcon,
         allowedRoles: ["admin", "treasurer"],
       },

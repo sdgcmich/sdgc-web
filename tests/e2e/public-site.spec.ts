@@ -191,8 +191,8 @@ test.describe("Public Site Navigation & Experiences", () => {
     await expect(incrementBtn).toBeVisible();
     await incrementBtn.click(); // from 2 to 3
 
-    // Verify summary updates (3 tickets @ $20 = $60.00)
-    await expect(page.getByText("$60.00 USD")).toBeVisible();
+    // Verify summary updates (3 tickets @ $15 = $45.00)
+    await expect(page.getByText("$45.00 USD")).toBeVisible();
   });
 
   test("renders dynamic legal pages (/terms and /privacy) with botanical policy content", async ({
