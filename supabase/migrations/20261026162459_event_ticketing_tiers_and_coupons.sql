@@ -5,17 +5,21 @@
 
 -- 1. Enhance events table with ticket requirement and tier pricing
 alter table public.events add column if not exists requires_tickets boolean not null default false;
-alter table public.events add column if not exists ticket_price_cents integer default 2000 check (ticket_price_cents is null or ticket_price_cents >= 0);
+alter table public.events add column if not exists ticket_price_cents integer default 1500 check (ticket_price_cents is null or ticket_price_cents >= 0);
 alter table public.events add column if not exists student_price_cents integer default 1000 check (student_price_cents is null or student_price_cents >= 0);
 alter table public.events add column if not exists child_price_cents integer default 0 check (child_price_cents is null or child_price_cents >= 0);
 
 -- Backfill existing events that have a ticket_url or garden-walk slug
 update public.events
 set requires_tickets = true,
-    ticket_price_cents = coalesce(ticket_price_cents, 2000),
+    ticket_price_cents = coalesce(ticket_price_cents, 1500),
     student_price_cents = coalesce(student_price_cents, 1000),
     child_price_cents = coalesce(child_price_cents, 0)
 where ticket_url is not null or slug like '%garden-walk%';
+
+update public.events
+set ticket_price_cents = 1500
+where slug like '%garden-walk%';
 
 -- 2. Create event_coupons table
 create table if not exists public.event_coupons (
