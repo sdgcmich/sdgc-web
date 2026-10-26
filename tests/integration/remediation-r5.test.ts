@@ -1,5 +1,5 @@
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import nextConfig from "../../next.config";
 import { GET as logoutGet, POST as logoutPost } from "@/app/logout/route";
 import { NextRequest } from "next/server";
@@ -125,6 +125,19 @@ describe("Remediation Package R5 — Legacy Routes, Ticketing & Importer Reconci
   });
 
   describe("R5.3: Event Ticketing Parity & Separation from Club Membership Dues", () => {
+    let prevSim: string | undefined;
+    beforeAll(() => {
+      prevSim = process.env.LOCAL_PAYMENTS_SIMULATION;
+      process.env.LOCAL_PAYMENTS_SIMULATION = "true";
+    });
+    afterAll(() => {
+      if (prevSim !== undefined) {
+        process.env.LOCAL_PAYMENTS_SIMULATION = prevSim;
+      } else {
+        delete process.env.LOCAL_PAYMENTS_SIMULATION;
+      }
+    });
+
     it("returns ticketed events including the Garden Walk fundraiser", async () => {
       const events = await getTicketEvents();
       expect(events.length).toBeGreaterThanOrEqual(1);

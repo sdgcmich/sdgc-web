@@ -91,7 +91,11 @@ export class StripePaymentProvider {
     );
     params.append("line_items[0][quantity]", "1");
 
-    const returnUrl = input.returnPath;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
+    const returnUrl =
+      input.returnPath.startsWith("http://") || input.returnPath.startsWith("https://")
+        ? input.returnPath
+        : `${siteUrl}${input.returnPath.startsWith("/") ? "" : "/"}${input.returnPath}`;
     const successSeparator = returnUrl.includes("?") ? "&" : "?";
     const cancelSeparator = returnUrl.includes("?") ? "&" : "?";
 
