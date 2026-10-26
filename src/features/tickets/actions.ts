@@ -200,9 +200,15 @@ export async function processTicketOrderAction(
     .single();
 
   if (insertError) {
+    const isMissingTable =
+      insertError.message?.toLowerCase().includes("ticket_orders") ||
+      insertError.code === "PGRST204";
+    const errorMessage = isMissingTable
+      ? "Ticket orders table is not yet provisioned on this database environment. Please apply the latest database migration (hosted_migrations_patch.sql) in your Supabase SQL Editor."
+      : `Could not initialize ticket reservation: ${insertError.message}`;
     return {
       success: false,
-      error: `Could not initialize ticket reservation: ${insertError.message}`,
+      error: errorMessage,
     };
   }
 
@@ -571,4 +577,123 @@ export async function cancelTicketOrderAction(
     success: true,
     data: { status: "cancelled" },
   };
+}
+
+/**
+ * Reconciles a Stripe Checkout Session for event tickets upon user return.
+ * - Confirms ticket order in ticket_orders table.
+ * - Associates stripe_payment_intent_id.
+ * - Idempotent: safe against duplicate deliveries or page reloads.
+ */
+export async function reconcileTicketCheckoutSessionAction(
+  sessionId: string,
+  orderRef?: string,
+): Promise<ActionResult<TicketOrder>> {
+  try {
+    if (!sessionId?.startsWith("cs_")) {
+      return { success: false, error: "Invalid checkout session identifier." };
+    }
+
+    const session = await stripePaymentProvider.retrieveCheckoutSession(sessionId);
+    if (session.paymentStatus !== "paid" && session.status !== "complete") {
+      return {
+        success: false,
+        error: `Checkout session is not paid (status: ${session.status}, payment_status: ${session.paymentStatus}).`,
+      };
+    }
+
+    const targetOrderRef = orderRef || session.metadata.orderReference;
+    if (!targetOrderRef) {
+      return { success: false, error: "Missing order reference in checkout session metadata." };
+    }
+
+    const supabase = createAdminClient();
+    const { data: existingOrder, error: fetchError } = await supabase
+      .from("ticket_orders")
+      .select("*, events(title, starts_at, venues(name, city, state))")
+      .eq("order_reference", targetOrderRef)
+      .maybeSingle();
+
+    if (fetchError || !existingOrder) {
+      return { success: false, error: "Ticket order record not found." };
+    }
+
+    if (existingOrder.status !== "confirmed") {
+      await supabase
+        .from("ticket_orders")
+        .update({
+          status: "confirmed",
+          stripe_session_id: session.id,
+          stripe_payment_intent_id: session.paymentIntentId || null,
+          notes: "Confirmed via Stripe Checkout session return verification.",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingOrder.id);
+
+      await supabase.from("audit_events").insert({
+        action: "ticket.reconciled",
+        entity_type: "ticket_order",
+        entity_id: existingOrder.id,
+        details: {
+          sessionId: session.id,
+          paymentIntentId: session.paymentIntentId,
+          orderReference: targetOrderRef,
+          amountCents: session.amountTotal,
+        },
+      });
+    }
+
+    const event = existingOrder.events as {
+      title?: string;
+      starts_at?: string;
+      venues?: { name?: string; city?: string; state?: string } | null;
+    } | null;
+
+    const startDate = event?.starts_at ? new Date(event.starts_at) : new Date();
+    const venueInfo = event?.venues;
+    const location = venueInfo?.name
+      ? `${venueInfo.name}, ${venueInfo.city || "Saugatuck"}, ${venueInfo.state || "MI"}`
+      : "Saugatuck & Douglas, MI";
+
+    const order: TicketOrder = {
+      orderId: existingOrder.id,
+      orderReference: existingOrder.order_reference,
+      eventId: existingOrder.event_id || "",
+      eventTitle: event?.title || "Annual Garden Walk Fundraiser",
+      eventDate: startDate.toLocaleDateString("en-US", {
+        timeZone: "America/Detroit",
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      eventTime: startDate.toLocaleTimeString("en-US", {
+        timeZone: "America/Detroit",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+      eventLocation: location,
+      ticketQuantity: existingOrder.ticket_quantity,
+      unitPriceCents: existingOrder.unit_price_cents,
+      totalCents: existingOrder.total_amount_cents,
+      purchaserName: existingOrder.purchaser_name,
+      purchaserEmail: existingOrder.purchaser_email,
+      purchaserPhone: existingOrder.purchaser_phone || null,
+      status: "confirmed",
+      notes: existingOrder.notes || null,
+      createdAt: existingOrder.created_at,
+      checkInInstructions:
+        "Please present this confirmed ticket pass (printed or digital PDF) at the Garden Walk check-in desk at Saugatuck City Hall on tour day.",
+    };
+
+    safeRevalidatePath("/admin/tickets");
+    safeRevalidatePath("/tickets-checkout");
+
+    return { success: true, data: order };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to reconcile ticket session.",
+    };
+  }
 }

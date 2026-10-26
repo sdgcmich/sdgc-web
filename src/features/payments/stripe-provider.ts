@@ -241,6 +241,74 @@ export class StripePaymentProvider {
   }
 
   /**
+   * Retrieves a Checkout Session directly from Stripe API to verify payment status synchronously.
+   * Best practice for redirect-return post-payment reconciliation and webhook fallback.
+   */
+  async retrieveCheckoutSession(sessionId: string): Promise<{
+    id: string;
+    status: string;
+    paymentStatus: string;
+    clientReferenceId?: string;
+    paymentIntentId?: string;
+    amountTotal?: number;
+    currency?: string;
+    metadata: Record<string, string>;
+    customerEmail?: string;
+  }> {
+    const secretKey = process.env.STRIPE_SECRET_KEY || "";
+    if (!secretKey) {
+      throw new Error("Stripe secret key not configured.");
+    }
+
+    const response = await fetch(
+      `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${secretKey}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({}))) as {
+        error?: { message?: string };
+      };
+      const message =
+        errorData?.error?.message || `Stripe API error: ${response.status} ${response.statusText}`;
+      throw new Error(`Failed to retrieve Stripe Checkout session: ${message}`);
+    }
+
+    const data = (await response.json()) as {
+      id: string;
+      status: string;
+      payment_status: string;
+      client_reference_id?: string;
+      payment_intent?: string | { id: string };
+      amount_total?: number;
+      currency?: string;
+      metadata?: Record<string, string>;
+      customer_details?: { email?: string };
+      customer_email?: string;
+    };
+
+    const paymentIntentId =
+      typeof data.payment_intent === "string" ? data.payment_intent : data.payment_intent?.id;
+
+    return {
+      id: data.id,
+      status: data.status,
+      paymentStatus: data.payment_status,
+      clientReferenceId: data.client_reference_id,
+      paymentIntentId,
+      amountTotal: data.amount_total,
+      currency: data.currency,
+      metadata: data.metadata || {},
+      customerEmail: data.customer_details?.email || data.customer_email,
+    };
+  }
+
+  /**
    * Validates Stripe webhook signatures.
    * Verifies HMAC-SHA256 signature using STRIPE_WEBHOOK_SECRET.
    * Enforces timestamp tolerance (default: 300 seconds) against replay attacks.

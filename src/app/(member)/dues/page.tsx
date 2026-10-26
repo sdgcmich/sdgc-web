@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { requireUser } from "@/features/auth/authorization";
 import { getOwnMembershipSummary } from "@/features/membership/queries";
 import { getCurrentTermInfo, getRecentPaymentsForUser } from "@/features/payments/queries";
@@ -41,7 +42,15 @@ export default async function MemberDuesPage() {
         </p>
       </div>
 
-      <DuesCard membership={membershipData} isLoggedIn={true} paymentHistory={paymentHistory} />
+      <Suspense
+        fallback={
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            Loading dues status...
+          </div>
+        }
+      >
+        <DuesCard membership={membershipData} isLoggedIn={true} paymentHistory={paymentHistory} />
+      </Suspense>
     </div>
   );
 }

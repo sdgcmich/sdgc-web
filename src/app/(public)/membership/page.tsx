@@ -1,6 +1,7 @@
+import { Suspense } from "react";
 import { getCurrentUser } from "@/features/auth/authorization";
 import { getOwnMembershipSummary } from "@/features/membership/queries";
-import { getCurrentTermInfo } from "@/features/payments/queries";
+import { getCurrentTermInfo, getRecentPaymentsForUser } from "@/features/payments/queries";
 import { getMembershipYear } from "@/features/membership/rules";
 import { DuesCard } from "@/features/membership/components/dues-card";
 import type { MembershipSummary } from "@/features/membership/types";
@@ -21,6 +22,7 @@ export default async function MembershipPage() {
   const michiganYear = getMembershipYear(new Date(), "America/Detroit");
   const targetYear = term?.year ?? michiganYear;
   const summary = user ? await getOwnMembershipSummary(targetYear) : null;
+  const paymentHistory = user ? await getRecentPaymentsForUser() : undefined;
 
   const membershipData: MembershipSummary = summary ?? {
     id: "",
@@ -51,7 +53,19 @@ export default async function MembershipPage() {
         </p>
       </div>
 
-      <DuesCard membership={membershipData} isLoggedIn={Boolean(user)} />
+      <Suspense
+        fallback={
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            Loading dues status...
+          </div>
+        }
+      >
+        <DuesCard
+          membership={membershipData}
+          isLoggedIn={Boolean(user)}
+          paymentHistory={paymentHistory}
+        />
+      </Suspense>
     </div>
   );
 }

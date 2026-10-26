@@ -267,4 +267,65 @@ describe("StripePaymentProvider Unit & Sandbox Contract Tests", () => {
       expect(provider.verifyWebhookSignature(testPayload, multiSigHeader)).toBe(true);
     });
   });
+
+  describe("retrieveCheckoutSession", () => {
+    it("fails if STRIPE_SECRET_KEY is missing", async () => {
+      delete process.env.STRIPE_SECRET_KEY;
+      const provider = new StripePaymentProvider();
+      await expect(provider.retrieveCheckoutSession("cs_test_123")).rejects.toThrow(
+        "Stripe secret key not configured.",
+      );
+    });
+
+    it("retrieves and parses session successfully", async () => {
+      process.env.STRIPE_SECRET_KEY = "sk_test_mockKey";
+      const provider = new StripePaymentProvider();
+
+      const mockResponse = {
+        id: "cs_test_123",
+        status: "complete",
+        payment_status: "paid",
+        client_reference_id: "pay_123",
+        payment_intent: "pi_123",
+        amount_total: 5000,
+        currency: "usd",
+        metadata: {
+          paymentId: "pay_123",
+          userId: "usr_123",
+          termYear: "2026",
+        },
+        customer_details: { email: "member@example.com" },
+      };
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const session = await provider.retrieveCheckoutSession("cs_test_123");
+      expect(session.id).toBe("cs_test_123");
+      expect(session.status).toBe("complete");
+      expect(session.paymentStatus).toBe("paid");
+      expect(session.paymentIntentId).toBe("pi_123");
+      expect(session.amountTotal).toBe(5000);
+      expect(session.metadata.termYear).toBe("2026");
+      expect(session.customerEmail).toBe("member@example.com");
+    });
+
+    it("throws on API error with status text", async () => {
+      process.env.STRIPE_SECRET_KEY = "sk_test_mockKey";
+      const provider = new StripePaymentProvider();
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+        json: async () => ({ error: { message: "No such checkout session: cs_fake" } }),
+      });
+
+      await expect(provider.retrieveCheckoutSession("cs_fake")).rejects.toThrow(
+        "No such checkout session: cs_fake",
+      );
+    });
+  });
 });

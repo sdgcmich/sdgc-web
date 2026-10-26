@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import type { TicketEvent, TicketOrder } from "../types";
-import { processTicketOrderAction, getTicketOrderByReferenceAction } from "../actions";
+import {
+  processTicketOrderAction,
+  getTicketOrderByReferenceAction,
+  reconcileTicketCheckoutSessionAction,
+} from "../actions";
 
 interface TicketsCheckoutProps {
   events: TicketEvent[];
@@ -14,7 +18,9 @@ interface TicketsCheckoutProps {
 export function TicketsCheckout({ events }: TicketsCheckoutProps) {
   const searchParams = useSearchParams();
   const orderRef = searchParams.get("order_ref");
-  const isSuccess = searchParams.get("success") === "true";
+  const sessionId = searchParams.get("session_id");
+  const paymentStatus = searchParams.get("payment_status");
+  const isSuccess = searchParams.get("success") === "true" || paymentStatus === "success";
 
   const [selectedEventId, setSelectedEventId] = useState<string>(events[0]?.id || "gw-2026");
   const [quantity, setQuantity] = useState<number>(2);
@@ -27,16 +33,44 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
   const [confirmedOrder, setConfirmedOrder] = useState<TicketOrder | null>(null);
 
   useEffect(() => {
-    if (orderRef && isSuccess && !confirmedOrder) {
-      setIsSubmitting(true);
-      getTicketOrderByReferenceAction(orderRef).then((res) => {
-        setIsSubmitting(false);
-        if (res.success && res.data) {
-          setConfirmedOrder(res.data);
-        }
-      });
+    if (!confirmedOrder) {
+      if (sessionId && isSuccess) {
+        setIsSubmitting(true);
+        reconcileTicketCheckoutSessionAction(sessionId, orderRef || undefined)
+          .then((res) => {
+            setIsSubmitting(false);
+            if (res.success && res.data) {
+              setConfirmedOrder(res.data);
+              window.history.replaceState({}, "", "/tickets-checkout");
+            } else if (orderRef) {
+              getTicketOrderByReferenceAction(orderRef).then((orderRes) => {
+                if (orderRes.success && orderRes.data) {
+                  setConfirmedOrder(orderRes.data);
+                }
+              });
+            }
+          })
+          .catch(() => {
+            setIsSubmitting(false);
+            if (orderRef) {
+              getTicketOrderByReferenceAction(orderRef).then((orderRes) => {
+                if (orderRes.success && orderRes.data) {
+                  setConfirmedOrder(orderRes.data);
+                }
+              });
+            }
+          });
+      } else if (orderRef && isSuccess) {
+        setIsSubmitting(true);
+        getTicketOrderByReferenceAction(orderRef).then((res) => {
+          setIsSubmitting(false);
+          if (res.success && res.data) {
+            setConfirmedOrder(res.data);
+          }
+        });
+      }
     }
-  }, [orderRef, isSuccess, confirmedOrder]);
+  }, [sessionId, orderRef, isSuccess, confirmedOrder]);
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) || events[0];
   const unitPrice = selectedEvent ? selectedEvent.advancePriceCents / 100 : 20;

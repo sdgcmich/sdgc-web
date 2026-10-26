@@ -36,6 +36,7 @@ export interface CheckoutResult {
 export interface InitiateDuesInput {
   method: "credit_card" | "check";
   termYear?: number;
+  returnPath?: string;
 }
 
 export interface InitiateDuesResult {
