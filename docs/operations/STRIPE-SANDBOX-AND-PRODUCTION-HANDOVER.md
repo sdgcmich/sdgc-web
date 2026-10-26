@@ -6,8 +6,11 @@ The Saugatuck Douglas Garden Club (SDGC) website handles annual membership dues 
 
 ### Core Payment Design
 
-- **Server-Controlled Pricing & Metadata**: All dues line items ($50.00 / 5000 cents USD), currency, metadata (`payment_reference`, `membership_id`, `dues_year`), and success/cancel URLs are constructed strictly server-side in `src/features/payments/stripe-provider.ts`. The client browser cannot alter the transaction amount or currency.
-- **Club Bylaws Compliance**: A successful payment marks the payment record as `confirmed`, but keeps the member application status as `pending`. Club officers (Admin/Treasurer) must manually review and approve the membership pursuant to SDGC bylaws.
+- **Server-Controlled Pricing & Metadata**: All dues line items ($50.00 / 5000 cents USD) and event tickets ($20.00 / 2000 cents USD), currency, metadata (`payment_reference`, `order_reference`, `dues_year`, `ticket_quantity`), and success/cancel URLs are constructed strictly server-side in `src/features/payments/stripe-provider.ts` and `src/features/tickets/actions.ts`. The client browser cannot alter transaction amounts or currency.
+- **Club Bylaws Compliance**: A successful dues payment marks the payment record as `confirmed`, but keeps the member application status as `pending`. Club officers (Admin/Treasurer) must manually review and approve the membership pursuant to SDGC bylaws. Advance ticket purchases are completely decoupled from membership privileges.
+- **Automated PDF Ticket Passes & 501(c)(3) Receipts**:
+  - **Official Event Ticket Pass**: Available instantly upon successful checkout at `/api/tickets/[orderReference]/pdf`, featuring a printable vector-styled ticket with perforated stub, unique order reference, check-in instructions, and total admissions count.
+  - **Official 501(c)(3) Dues Receipt**: Available to confirmed members at `/api/payments/receipt/[paymentId]/pdf`, complete with organization EIN, dues year, payment method, audit reference, and charitable deduction notice.
 - **Webhook Authenticity & Anti-Replay**: The webhook handler (`src/app/api/webhooks/stripe/route.ts`) verifies cryptographic HMAC-SHA256 signatures against the raw payload body. It enforces timestamp tolerance (default 300s) to defend against replay attacks and supports multi-signature rotation.
 - **Idempotency**: Webhook events are tracked in `audit_events`. Reprocessed or duplicate deliveries are acknowledged safely (`200 OK`) without double-crediting or mutating finalized records.
 
