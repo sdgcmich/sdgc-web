@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "@playwright/test";
 
-const BASE_URL = "http://127.0.0.1:3000";
+const BASE_URL = process.env.BASE_URL || "https://sdgc.redwan.work";
 const ARTIFACTS_DIR =
   "C:/Users/redwan/.gemini/antigravity-ide/brain/3d20eb24-92d0-4593-a479-a672e12c5a9e/screenshots";
 

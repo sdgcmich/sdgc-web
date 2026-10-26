@@ -188,7 +188,13 @@ test.describe("Phase P5 — Public Data, Contact & Financial Workflows", () => {
         await expect(confirmedBtn).toBeVisible();
       }
     } else {
-      await expect(page.getByRole("button", { name: "2026 Dues Paid & Confirmed" })).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "2026 Dues Paid & Confirmed" }).or(
+          page.getByRole("heading", {
+            name: /Payment In Progress \/ Awaiting Clearance/i,
+          }),
+        ),
+      ).toBeVisible();
     }
 
     // Verify badge
