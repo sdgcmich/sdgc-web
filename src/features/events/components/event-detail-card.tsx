@@ -144,15 +144,15 @@ export function EventDetailCard({ event, prevEvent, nextEvent }: EventDetailCard
         )}
 
         {/* Calendar Subscription / Export */}
-        <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="mt-6 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
           <a
             href={`/event/${event.slug}/ics`}
             download={`${event.slug}.ics`}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors shadow-2xs"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors shadow-2xs w-full sm:w-auto"
             aria-label="Export event to iCalendar file"
           >
             <svg
-              className="h-4 w-4 text-primary"
+              className="h-4 w-4 text-primary shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -169,7 +169,7 @@ export function EventDetailCard({ event, prevEvent, nextEvent }: EventDetailCard
           </a>
           <a
             href="/events/feed.ics"
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors shadow-2xs"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors shadow-2xs w-full sm:w-auto"
             aria-label="Subscribe to full club calendar feed"
           >
             Subscribe to All Club Events (.ics)
@@ -193,7 +193,7 @@ export function EventDetailCard({ event, prevEvent, nextEvent }: EventDetailCard
           {nextEvent ? (
             <Link
               href={`/event/${nextEvent.slug}`}
-              className="text-right text-primary hover:underline"
+              className="text-left sm:text-right text-primary hover:underline"
             >
               <span className="block text-xs text-muted-foreground">Next Event &rarr;</span>
               <span className="font-semibold">{nextEvent.title}</span>

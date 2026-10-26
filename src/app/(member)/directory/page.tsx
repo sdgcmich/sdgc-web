@@ -1,7 +1,5 @@
-import type { Route } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getCurrentUser, checkIsActiveMember, hasCapability } from "@/features/auth/authorization";
+import { requireUser, checkIsActiveMember, hasCapability } from "@/features/auth/authorization";
 import { getMembershipYear } from "@/features/membership/rules";
 import { getMemberDirectory } from "@/features/membership/queries";
 import { MemberDirectory } from "@/features/membership/components/member-directory";
@@ -12,10 +10,7 @@ export const metadata = {
 };
 
 export default async function DirectoryPage() {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect("/login?returnTo=/directory" as Route);
-  }
+  const user = await requireUser("/directory");
 
   const [isActive, isAdmin] = await Promise.all([
     checkIsActiveMember(user.id),

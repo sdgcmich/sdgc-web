@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/features/auth/authorization";
+import { requireUser } from "@/features/auth/authorization";
 import { getOwnProfile } from "@/features/membership/queries";
 import { MemberCard } from "@/features/membership/components/member-card";
 import { ProfileEditor } from "@/features/membership/components/profile-editor";
@@ -14,22 +14,20 @@ export const metadata = {
 };
 
 export default async function ProfilePage() {
-  const user = await getCurrentUser();
+  const user = await requireUser("/profile");
 
-  if (user) {
-    const supabase = await createClient();
-    const { data: userRoles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
-    const roles = (userRoles || []).map((r) => r.role);
-    const isStaff = roles.some((r) => ["admin", "editor", "treasurer"].includes(r));
-    if (isStaff) {
-      redirect("/admin/settings/profile");
-    }
+  const supabase = await createClient();
+  const { data: userRoles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id);
+  const roles = (userRoles || []).map((r) => r.role);
+  const isStaff = roles.some((r) => ["admin", "editor", "treasurer"].includes(r));
+  if (isStaff) {
+    redirect("/admin/settings/profile");
   }
 
-  const profile = user ? await getOwnProfile() : null;
+  const profile = await getOwnProfile();
 
   return (
     <div className="mx-auto max-w-4xl space-y-10">

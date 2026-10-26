@@ -287,7 +287,106 @@ export function AdminMembers({ initialMembers, initialStatusFilter }: AdminMembe
         </div>
       )}
 
-      <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
+      {/* Mobile View: Member Cards (< md) */}
+      <div className="md:hidden divide-y divide-border rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
+        {filteredMembers.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground text-xs">
+            No member records match the filter.
+          </div>
+        ) : (
+          filteredMembers.map((member) => (
+            <div key={member.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="font-semibold text-foreground text-sm block truncate">
+                    {member.name}
+                  </span>
+                  {member.isMasterGardener && (
+                    <span className="text-[11px] text-primary font-medium block">
+                      Master Gardener
+                    </span>
+                  )}
+                  <span className="font-mono text-xs text-muted-foreground block truncate">
+                    @{member.username}
+                  </span>
+                  <span className="text-xs text-muted-foreground block break-all">
+                    {member.email}
+                  </span>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  {member.isApproved ? (
+                    <Badge variant="default" className="text-[10px]">
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge variant="warning" className="text-[10px]">
+                      Pending Approval
+                    </Badge>
+                  )}
+                  {member.paymentStatus === "confirmed" ? (
+                    <Badge variant="success" className="text-[10px]">
+                      Paid ($50)
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px]">
+                      Unpaid
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {member.roles.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                    Roles:
+                  </span>
+                  {member.roles.map((r) => (
+                    <span
+                      key={r}
+                      className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase font-semibold text-muted-foreground"
+                    >
+                      {r}
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenRoleModal(member)}
+                    className="text-[11px] text-primary hover:underline ml-1 cursor-pointer font-medium"
+                  >
+                    Edit
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleOpenEditProfile(member)}
+                  className="text-xs h-8 px-3"
+                >
+                  Details / Edit
+                </Button>
+                {!member.isApproved ? (
+                  <Button
+                    size="sm"
+                    disabled={isSubmitting}
+                    onClick={() => handleApprove(member.id, member.name, member.version)}
+                    className="text-xs h-8 px-3"
+                  >
+                    Approve
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground font-medium px-2">Approved</span>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View (md+) */}
+      <div className="hidden md:block rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[820px]">
             <thead className="border-b border-border/60 bg-muted/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">

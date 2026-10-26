@@ -96,7 +96,7 @@ export default async function ContactPage() {
                   />
                 </svg>
               </div>
-              <div className="text-xs space-y-1">
+              <div className="text-xs space-y-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-foreground uppercase tracking-wider text-[11px]">
                     Email
@@ -108,7 +108,7 @@ export default async function ContactPage() {
                 <p>
                   <a
                     href={`mailto:${contact.email || "info@sdgcmich.org"}`}
-                    className="text-primary hover:underline font-medium text-xs"
+                    className="text-primary hover:underline font-medium text-xs break-all"
                   >
                     {contact.email || "info@sdgcmich.org"}
                   </a>

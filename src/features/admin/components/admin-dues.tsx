@@ -375,7 +375,7 @@ export function AdminDues({
             />
 
             {/* Status Tabs */}
-            <div className="inline-flex rounded-xl border border-border/60 bg-muted/40 p-1 text-xs">
+            <div className="inline-flex rounded-xl border border-border/60 bg-muted/40 p-1 text-xs overflow-x-auto no-scrollbar max-w-full">
               {[
                 { id: "all", label: "All" },
                 { id: "pending", label: "Pending" },
@@ -386,7 +386,7 @@ export function AdminDues({
                   key={f.id}
                   type="button"
                   onClick={() => setStatusFilter(f.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     statusFilter === f.id
                       ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -399,7 +399,127 @@ export function AdminDues({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile View: Dues Transaction Cards (< md) */}
+        <div className="md:hidden divide-y divide-border">
+          {filteredRecords.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground text-xs">
+              No payment records match the current filter.
+            </div>
+          ) : (
+            filteredRecords.map((r) => (
+              <div key={r.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="font-semibold text-sm text-foreground block truncate">
+                      {r.memberName}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground block truncate">
+                      @{r.memberUsername}
+                    </span>
+                    <span className="text-xs text-muted-foreground">Term Year {r.year}</span>
+                    {r.notes && (
+                      <span className="block text-[11px] text-muted-foreground/80 italic mt-0.5">
+                        Note: {r.notes}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right space-y-1 shrink-0">
+                    <span className="font-bold text-sm text-foreground block">
+                      ${(r.amountCents / 100).toFixed(2)}
+                    </span>
+                    {r.status === "confirmed" ? (
+                      <Badge variant="success" className="text-[10px]">
+                        Confirmed
+                      </Badge>
+                    ) : r.status === "failed" ? (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Failed
+                      </Badge>
+                    ) : r.status === "refunded" ? (
+                      <Badge variant="outline" className="text-[10px]">
+                        Refunded
+                      </Badge>
+                    ) : (
+                      <Badge variant="warning" className="text-[10px]">
+                        Awaiting Clearance
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/20 p-2.5 rounded-xl gap-2">
+                  <span>
+                    Method:{" "}
+                    <strong className="capitalize text-foreground">
+                      {r.paymentMethod.replace("_", " ")}
+                    </strong>
+                  </span>
+                  {r.notes && (
+                    <span className="font-mono text-[10px] truncate max-w-[140px]">
+                      Note: {r.notes}
+                    </span>
+                  )}
+                </div>
+
+                {r.status === "pending" && (
+                  <div className="pt-2 border-t border-border/40">
+                    {r.paymentMethod === "check" ? (
+                      reconcilingId === r.id ? (
+                        <div className="space-y-2">
+                          <Input
+                            placeholder="Check number or memo note..."
+                            value={reconcileNotes}
+                            onChange={(e) => setReconcileNotes(e.target.value)}
+                            className="text-xs h-8"
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              className="text-xs h-8 px-3"
+                              disabled={isSubmitting}
+                              onClick={() => handleReconcile(r.id, r.memberName)}
+                            >
+                              Confirm
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-8 px-3"
+                              onClick={() => {
+                                setReconcilingId(null);
+                                setReconcileNotes("");
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="text-xs h-8 px-3"
+                            onClick={() => setReconcilingId(r.id)}
+                          >
+                            Reconcile Check
+                          </Button>
+                        </div>
+                      )
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic block text-right">
+                        Online Processing
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table View (md+) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="border-b border-border bg-muted/50 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>

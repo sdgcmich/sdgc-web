@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
 import { forgotPasswordAction } from "@/features/auth/actions";
+import { updateSession } from "@/lib/supabase/proxy";
 import { createAnonClient, createAuthClient, createServiceClient, getLocalFixtures } from "./setup";
 
 describe("Phase P4: Authentication & Authorization Integration Tests", () => {
@@ -255,6 +257,50 @@ describe("Phase P4: Authentication & Authorization Integration Tests", () => {
         .single();
 
       expect(verified?.phone).toBe(testPhone);
+    });
+  });
+
+  describe("Edge Proxy Session & Protected Route Guards", () => {
+    it("immediately returns HTTP 307 redirect to login for unauthenticated access to /directory", async () => {
+      const req = new NextRequest("http://localhost:3000/directory");
+      const { response, user } = await updateSession(req);
+      expect(user).toBeNull();
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe(
+        "http://localhost:3000/login?returnTo=%2Fdirectory",
+      );
+    });
+
+    it("immediately returns HTTP 307 redirect to login for unauthenticated access to /admin with search params", async () => {
+      const req = new NextRequest("http://localhost:3000/admin/members?filter=pending");
+      const { response, user } = await updateSession(req);
+      expect(user).toBeNull();
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe(
+        "http://localhost:3000/login?returnTo=%2Fadmin%2Fmembers%3Ffilter%3Dpending",
+      );
+    });
+
+    it("immediately returns HTTP 307 redirect to login for unauthenticated access to /profile and /dues", async () => {
+      for (const path of ["/profile", "/dues"]) {
+        const req = new NextRequest(`http://localhost:3000${path}`);
+        const { response, user } = await updateSession(req);
+        expect(user).toBeNull();
+        expect(response.status).toBe(307);
+        expect(response.headers.get("location")).toBe(
+          `http://localhost:3000/login?returnTo=${encodeURIComponent(path)}`,
+        );
+      }
+    });
+
+    it("does not block unauthenticated access to public routes like /membership, /events, /about", async () => {
+      for (const path of ["/membership", "/events", "/about", "/"]) {
+        const req = new NextRequest(`http://localhost:3000${path}`);
+        const { response, user } = await updateSession(req);
+        expect(user).toBeNull();
+        expect(response.status).toBe(200);
+        expect(response.headers.get("location")).toBeNull();
+      }
     });
   });
 });

@@ -67,4 +67,19 @@ test.describe("Phase P4: Authentication & Member Profile E2E Journeys", () => {
     // Verify success banner
     await expect(page.getByText("Profile updated successfully!")).toBeVisible();
   });
+
+  test("unauthenticated visitor navigating to /directory is redirected to /login with zero data leak", async ({
+    page,
+  }) => {
+    await page.goto("/directory");
+    await expect(page).toHaveURL(/\/login\?returnTo=%2Fdirectory/);
+    await expect(page.getByRole("button", { name: "Sign In to Member Area" })).toBeVisible();
+    await expect(page.getByText("Member Directory")).not.toBeVisible();
+  });
+
+  test("unauthenticated visitor navigating to /admin is redirected to /login", async ({ page }) => {
+    await page.goto("/admin");
+    await expect(page).toHaveURL(/\/login\?returnTo=%2Fadmin/);
+    await expect(page.getByRole("button", { name: "Sign In to Member Area" })).toBeVisible();
+  });
 });

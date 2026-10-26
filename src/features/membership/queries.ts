@@ -136,6 +136,7 @@ export async function getOwnMembershipSummary(
 }
 
 export async function getMemberDirectory(): Promise<DirectoryMember[]> {
+  await requireUser("/directory");
   const supabase = await createClient();
 
   const { data: members, error } = await supabase

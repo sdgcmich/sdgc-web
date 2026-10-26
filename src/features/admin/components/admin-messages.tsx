@@ -174,7 +174,7 @@ export function AdminMessages({ initialMessages, initialFilter }: AdminMessagesP
                     Email:{" "}
                     <a
                       href={`mailto:${activeMessage.email}`}
-                      className="text-primary hover:underline font-medium"
+                      className="text-primary hover:underline font-medium break-all"
                     >
                       {activeMessage.email}
                     </a>
@@ -268,7 +268,7 @@ export function AdminMessages({ initialMessages, initialFilter }: AdminMessagesP
                   Reply via Email (mailto:)
                 </a>
 
-                <div className="space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {activeMessage.status !== "archived" ? (
                     <Button
                       size="sm"

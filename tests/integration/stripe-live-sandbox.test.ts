@@ -1,5 +1,8 @@
 import "./setup";
 import { describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
+import { POST as stripeWebhookPost } from "@/app/api/webhooks/stripe/route";
+import { GET as getTicketPdf } from "@/app/api/tickets/[orderReference]/pdf/route";
 import { stripePaymentProvider } from "@/features/payments/stripe-provider";
 
 describe("Live Stripe Sandbox API Verification", () => {
@@ -166,7 +169,7 @@ describe("Live Stripe Sandbox API Verification", () => {
         webhookSecret,
       );
 
-      const webhookResponse = await fetch("http://127.0.0.1:3000/api/webhooks/stripe", {
+      const webhookReq = new NextRequest("http://127.0.0.1:3000/api/webhooks/stripe", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -174,6 +177,8 @@ describe("Live Stripe Sandbox API Verification", () => {
         },
         body: webhookPayload,
       });
+
+      const webhookResponse = await stripeWebhookPost(webhookReq);
 
       expect(webhookResponse.status).toBe(200);
 
@@ -188,7 +193,12 @@ describe("Live Stripe Sandbox API Verification", () => {
       expect(updatedOrder?.stripe_payment_intent_id).toBe(fakePaymentIntentId);
 
       // Verify the PDF download endpoint returns a valid PDF
-      const pdfResponse = await fetch(`http://127.0.0.1:3000/api/tickets/${orderRef}/pdf`);
+      const pdfResponse = await getTicketPdf(
+        new Request(`http://127.0.0.1:3000/api/tickets/${orderRef}/pdf`),
+        {
+          params: Promise.resolve({ orderReference: orderRef }),
+        },
+      );
       expect(pdfResponse.status).toBe(200);
       expect(pdfResponse.headers.get("content-type")).toContain("application/pdf");
 

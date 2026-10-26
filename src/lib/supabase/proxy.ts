@@ -43,8 +43,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/profile") ||
     pathname.startsWith("/directory") ||
-    pathname.startsWith("/dues") ||
-    pathname.startsWith("/membership");
+    pathname.startsWith("/dues");
 
   const createRedirect = (targetUrl: URL) => {
     const redirectResponse = NextResponse.redirect(targetUrl);
@@ -54,10 +53,13 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse;
   };
 
-  // If unauthenticated user tries to directly hit /mfa-verify, forward to login
-  if (!user && isMfaRoute) {
-    url.pathname = "/login";
-    return { response: createRedirect(url), user: null };
+  // If unauthenticated user tries to hit protected route or MFA route, forward to login
+  if (!user && (isMfaRoute || isProtectedRoute)) {
+    const loginUrl = new URL("/login", request.url);
+    if (isProtectedRoute) {
+      loginUrl.searchParams.set("returnTo", pathname + (url.search || ""));
+    }
+    return { response: createRedirect(loginUrl), user: null };
   }
 
   // If user is authenticated, enforce AAL2 for accounts with MFA configured

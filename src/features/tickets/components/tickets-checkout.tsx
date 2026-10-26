@@ -174,7 +174,7 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
               </span>
               <p
                 id="order-reference-code"
-                className="font-mono text-2xl font-bold text-primary tracking-wider"
+                className="font-mono text-2xl font-bold text-primary tracking-wider break-all"
               >
                 {confirmedOrder.orderReference}
               </p>
@@ -251,7 +251,7 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Pass Holder Information
             </h4>
-            <p className="font-medium text-foreground">
+            <p className="font-medium text-foreground break-words break-all">
               {confirmedOrder.purchaserName} • {confirmedOrder.purchaserEmail}
               {confirmedOrder.purchaserPhone && ` • ${confirmedOrder.purchaserPhone}`}
             </p>
