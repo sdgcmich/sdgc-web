@@ -391,11 +391,11 @@ export function AdminContent({
         </div>
 
         {/* Tab Navigation Segmented Bar */}
-        <div className="inline-flex flex-wrap rounded-xl border border-border/60 bg-muted/40 p-1 text-xs font-semibold gap-1">
+        <div className="flex w-full sm:w-auto overflow-x-auto no-scrollbar rounded-xl border border-border/60 bg-muted/40 p-1 text-xs font-semibold gap-1 whitespace-nowrap">
           <button
             type="button"
             onClick={() => setActiveTab("pages")}
-            className={`rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
               activeTab === "pages"
                 ? "bg-card text-foreground shadow-2xs border border-border/40 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -406,7 +406,7 @@ export function AdminContent({
           <button
             type="button"
             onClick={() => setActiveTab("homepage")}
-            className={`rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
               activeTab === "homepage"
                 ? "bg-card text-foreground shadow-2xs border border-border/40 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -417,7 +417,7 @@ export function AdminContent({
           <button
             type="button"
             onClick={() => setActiveTab("about")}
-            className={`rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
               activeTab === "about"
                 ? "bg-card text-foreground shadow-2xs border border-border/40 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -428,7 +428,7 @@ export function AdminContent({
           <button
             type="button"
             onClick={() => setActiveTab("garden-walk")}
-            className={`rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
               activeTab === "garden-walk"
                 ? "bg-card text-foreground shadow-2xs border border-border/40 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -439,7 +439,7 @@ export function AdminContent({
           <button
             type="button"
             onClick={() => setActiveTab("join")}
-            className={`rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
               activeTab === "join"
                 ? "bg-card text-foreground shadow-2xs border border-border/40 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -468,7 +468,60 @@ export function AdminContent({
       {/* ==================================================== */}
       {activeTab === "pages" && (
         <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Mobile View: Page Cards (< md) */}
+          <div className="md:hidden divide-y divide-border/60">
+            {pages.map((p) => (
+              <div key={p.slug} className="p-4 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-semibold text-foreground text-sm">{p.title}</h3>
+                    <span className="font-mono text-xs text-muted-foreground">/{p.slug}</span>
+                  </div>
+                  <div>
+                    {p.status === "published" ? (
+                      <Badge variant="success" className="capitalize text-[10px]">
+                        Published
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="capitalize text-[10px]">
+                        Draft
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                {p.subtitle && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">{p.subtitle}</p>
+                )}
+
+                <div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs">
+                  <span className="text-[11px] text-muted-foreground">
+                    Updated: {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : "Default"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenEdit(p)}
+                      className="rounded-lg text-xs h-7 px-2.5"
+                    >
+                      Edit Copy
+                    </Button>
+                    <Link
+                      href={p.slug === "home" ? "/" : (`/${p.slug}` as Route)}
+                      target="_blank"
+                      className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors shadow-2xs"
+                    >
+                      View ↗
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop View: Full Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-sm min-w-[700px]">
               <thead className="border-b border-border/60 bg-muted/40 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <tr>

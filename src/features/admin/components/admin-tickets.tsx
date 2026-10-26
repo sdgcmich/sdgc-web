@@ -383,10 +383,137 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
         </div>
       </div>
 
-      {/* Ticket Orders Table */}
+      {/* Ticket Orders Card/Table Container */}
       <div className="rounded-3xl border border-border bg-card overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        {/* Mobile View: Card List (< md) */}
+        <div className="md:hidden divide-y divide-border/60">
+          {filteredOrders.length === 0 ? (
+            <div className="px-6 py-12 text-center text-muted-foreground">
+              <p className="font-semibold text-sm">No ticket orders found.</p>
+              <p className="mt-1 text-xs">
+                {searchQuery
+                  ? "Try clearing your search query or adjusting the filters."
+                  : "Orders placed on the public checkout page will appear here automatically."}
+              </p>
+            </div>
+          ) : (
+            filteredOrders.map((order) => {
+              const isCheckedIn = order.status === "checked_in";
+              const isCancelled = order.status === "cancelled";
+
+              return (
+                <div key={order.id} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrder(order)}
+                      className="font-mono font-bold text-xs text-foreground hover:text-primary transition-colors underline-offset-2 hover:underline"
+                    >
+                      {order.orderReference}
+                    </button>
+                    <div>
+                      {isCheckedIn ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 font-bold text-[10px]">
+                          <svg
+                            className="h-2.5 w-2.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="2.5"
+                            stroke="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="m4.5 12.75 6 6 9-13.5"
+                            />
+                          </svg>
+                          Checked In
+                        </span>
+                      ) : isCancelled ? (
+                        <span className="inline-flex items-center rounded-full bg-destructive/10 text-destructive border border-destructive/20 px-2 py-0.5 font-bold text-[10px]">
+                          Cancelled
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 font-bold text-[10px]">
+                          Confirmed
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="font-semibold text-sm text-foreground">
+                      {order.purchaserName}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{order.purchaserEmail}</div>
+                    {order.purchaserPhone && (
+                      <div className="text-[11px] text-muted-foreground/80">
+                        {order.purchaserPhone}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40">
+                    <span className="text-muted-foreground truncate max-w-[180px]">
+                      {order.eventTitle}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold text-[10px]">
+                        {order.ticketQuantity} pass{order.ticketQuantity > 1 ? "es" : ""}
+                      </span>
+                      <span className="font-bold text-foreground">
+                        ${(order.totalAmountCents / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <div className="flex items-center gap-2">
+                      {!isCancelled && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isCheckedIn ? "outline" : "primary"}
+                          disabled={isPending}
+                          onClick={() => handleToggleCheckIn(order)}
+                          className="text-xs h-7 px-3"
+                        >
+                          {isCheckedIn ? "Undo Check-In" : "Check In"}
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSelectedOrder(order)}
+                        className="text-xs h-7 px-2"
+                      >
+                        Details
+                      </Button>
+                    </div>
+
+                    {!isCancelled && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancelOrder(order)}
+                        className="text-muted-foreground hover:text-destructive text-sm transition-colors p-1"
+                        title="Cancel Order"
+                        aria-label={`Cancel order ${order.orderReference}`}
+                      >
+                        &times;
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop View: Full Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse min-w-[720px]">
             <thead>
               <tr className="border-b border-border/80 bg-muted/30 text-muted-foreground uppercase tracking-wider font-semibold">
                 <th className="px-5 py-3.5">Order Ref</th>
@@ -418,7 +545,7 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
                   return (
                     <tr key={order.id} className="hover:bg-muted/20 transition-colors group">
                       {/* Order Reference */}
-                      <td className="px-5 py-4 font-mono font-bold text-foreground">
+                      <td className="px-5 py-4 font-mono font-bold text-foreground whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => setSelectedOrder(order)}
@@ -448,19 +575,19 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
                       </td>
 
                       {/* Ticket Count */}
-                      <td className="px-5 py-4 font-medium text-foreground">
+                      <td className="px-5 py-4 font-medium text-foreground whitespace-nowrap">
                         <span className="inline-block bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-bold">
                           {order.ticketQuantity} pass{order.ticketQuantity > 1 ? "es" : ""}
                         </span>
                       </td>
 
                       {/* Total Amount */}
-                      <td className="px-5 py-4 font-semibold text-foreground">
+                      <td className="px-5 py-4 font-semibold text-foreground whitespace-nowrap">
                         ${(order.totalAmountCents / 100).toFixed(2)}
                       </td>
 
                       {/* Status */}
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-4 whitespace-nowrap">
                         {isCheckedIn ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 font-bold text-[11px]">
                             <svg
@@ -521,6 +648,7 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
                             onClick={() => handleCancelOrder(order)}
                             className="text-muted-foreground hover:text-destructive text-xs transition-colors p-1"
                             title="Cancel Order"
+                            aria-label={`Cancel order ${order.orderReference}`}
                           >
                             &times;
                           </button>

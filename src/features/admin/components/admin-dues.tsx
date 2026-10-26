@@ -399,7 +399,123 @@ export function AdminDues({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile View: Dues Record Cards (< md) */}
+        <div className="md:hidden divide-y divide-border">
+          {filteredRecords.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground text-xs">
+              No payment records match the current filter.
+            </div>
+          ) : (
+            filteredRecords.map((r) => (
+              <div key={r.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="font-semibold text-foreground text-sm block">
+                      {r.memberName}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground block">
+                      @{r.memberUsername}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="font-bold text-foreground text-sm">
+                      ${(r.amountCents / 100).toFixed(2)}
+                    </span>
+                    {r.status === "confirmed" ? (
+                      <Badge variant="success" className="text-[10px]">
+                        Confirmed
+                      </Badge>
+                    ) : r.status === "failed" ? (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Failed
+                      </Badge>
+                    ) : r.status === "refunded" ? (
+                      <Badge variant="outline" className="text-[10px]">
+                        Refunded
+                      </Badge>
+                    ) : (
+                      <Badge variant="warning" className="text-[10px]">
+                        Awaiting Clearance
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Year: {r.year}</span>
+                  <span className="capitalize">Method: {r.paymentMethod.replace("_", " ")}</span>
+                </div>
+
+                {r.notes && (
+                  <p className="text-[11px] text-muted-foreground italic bg-muted/30 p-2 rounded-lg">
+                    Note: {r.notes}
+                  </p>
+                )}
+
+                <div className="pt-2 border-t border-border/40 flex items-center justify-end">
+                  {r.status === "pending" ? (
+                    r.paymentMethod === "check" ? (
+                      reconcilingId === r.id ? (
+                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full">
+                          <input
+                            type="text"
+                            placeholder="Check # or note..."
+                            value={reconcileNotes}
+                            onChange={(e) => setReconcileNotes(e.target.value)}
+                            className="rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs text-foreground w-full sm:w-44"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              className="text-xs h-7 px-3"
+                              disabled={isSubmitting}
+                              onClick={() => handleReconcile(r.id, r.memberName)}
+                            >
+                              Confirm
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7 px-2.5"
+                              onClick={() => {
+                                setReconcilingId(null);
+                                setReconcileNotes("");
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="text-xs h-7 px-3"
+                          onClick={() => setReconcilingId(r.id)}
+                        >
+                          Reconcile Check
+                        </Button>
+                      )
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">
+                        Online Processing
+                      </span>
+                    )
+                  ) : r.status === "confirmed" ? (
+                    <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                      Reconciled {r.notes ? `(${r.notes})` : ""}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Closed</span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop View: Full Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="border-b border-border bg-muted/50 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -408,7 +524,7 @@ export function AdminDues({
                 <th className="p-4">Amount</th>
                 <th className="p-4">Method</th>
                 <th className="p-4">Status</th>
-                <th className="p-4 text-right">Reconciliation & Check Info</th>
+                <th className="p-4 text-right">Reconciliation &amp; Check Info</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

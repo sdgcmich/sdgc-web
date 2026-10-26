@@ -1,7 +1,8 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/authorization";
 import { getOwnProfile } from "@/features/membership/queries";
+import { MemberCard } from "@/features/membership/components/member-card";
 import { ProfileEditor } from "@/features/membership/components/profile-editor";
 import { AccountSecurity } from "@/features/membership/components/account-security";
 import { createClient } from "@/lib/supabase/server";
@@ -44,6 +45,9 @@ export default async function ProfilePage() {
           date.
         </p>
       </div>
+
+      {/* Member Verification Card */}
+      {profile && <MemberCard profile={profile} />}
 
       {/* Profile Details Card */}
       <div className="rounded-2xl border border-border bg-card p-6 sm:p-10 shadow-sm space-y-6">

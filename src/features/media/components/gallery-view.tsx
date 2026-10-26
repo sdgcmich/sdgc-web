@@ -262,7 +262,7 @@ export function GalleryView({ albums, media }: GalleryViewProps) {
 
         {/* Album Quick Tabs (tablist) */}
         <div
-          className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60"
+          className="flex overflow-x-auto no-scrollbar items-center gap-2 pt-2 border-t border-border/60 whitespace-nowrap"
           role="tablist"
           aria-label="Photo Albums"
         >
@@ -275,7 +275,7 @@ export function GalleryView({ albums, media }: GalleryViewProps) {
             onClick={() => {
               setSelectedAlbumId("all");
             }}
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+            className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
               selectedAlbumId === "all"
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -296,7 +296,7 @@ export function GalleryView({ albums, media }: GalleryViewProps) {
                 onClick={() => {
                   setSelectedAlbumId(album.id);
                 }}
-                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                   isSelected
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"

@@ -382,12 +382,99 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
       )}
 
       <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile View: Event Cards (< md) */}
+        <div className="md:hidden divide-y divide-border">
+          {events.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground text-xs">
+              No scheduled events found.
+            </div>
+          ) : (
+            events.map((e) => (
+              <div key={e.id} className="p-4 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {e.featuredImage && (
+                      <Image
+                        src={e.featuredImage}
+                        alt=""
+                        width={36}
+                        height={36}
+                        unoptimized
+                        className="h-9 w-9 shrink-0 rounded-md object-cover border border-border"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <Link
+                        href={`/event/${encodeURIComponent(e.slug.replace(/[^a-zA-Z0-9_-]/g, ""))}`}
+                        className="font-semibold text-sm text-foreground hover:underline truncate block"
+                      >
+                        {e.title}
+                      </Link>
+                      {e.category && (
+                        <span className="text-[11px] text-muted-foreground block truncate">
+                          {e.category}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    {e.status === "published" ? (
+                      <Badge variant="success" className="text-[10px]">
+                        Published
+                      </Badge>
+                    ) : e.status === "cancelled" ? (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Cancelled
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px]">
+                        Draft
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-xs text-muted-foreground space-y-0.5 pt-1">
+                  <div className="font-medium text-foreground">
+                    {formatEventDateTime(e.startsAt)}
+                  </div>
+                  <div className="text-[11px] truncate">
+                    {e.venueName || "Location Announced Upon Registration"}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7 px-3"
+                    disabled={isSubmitting}
+                    onClick={() => handleOpenEdit(e)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="text-xs h-7 px-2.5"
+                    disabled={isSubmitting}
+                    onClick={() => handleDelete(e.id, e.title)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop View: Full Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="border-b border-border/60 bg-muted/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="p-4">Event Title</th>
-                <th className="p-4">Date & Time (Detroit)</th>
+                <th className="p-4">Date &amp; Time (Detroit)</th>
                 <th className="p-4">Venue</th>
                 <th className="p-4">Category / Excerpt</th>
                 <th className="p-4">Status</th>
