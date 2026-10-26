@@ -1010,7 +1010,7 @@ export function AdminMedia({ initialMedia = [], initialAlbums = [] }: AdminMedia
                   id="new-album-category-select"
                   value={newAlbumCategory}
                   onChange={(e) => setNewAlbumCategory(e.target.value)}
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                  className="w-full h-10 rounded-md border border-input bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
                 >
                   <option value="Garden Walk">Garden Walk</option>
                   <option value="Civic Beautification">Civic Beautification</option>
@@ -1160,7 +1160,7 @@ export function AdminMedia({ initialMedia = [], initialAlbums = [] }: AdminMedia
                   id="edit-album-category-select"
                   value={editAlbumCategory}
                   onChange={(e) => setEditAlbumCategory(e.target.value)}
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                  className="w-full h-10 rounded-md border border-input bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
                 >
                   <option value="Garden Walk">Garden Walk</option>
                   <option value="Civic Beautification">Civic Beautification</option>

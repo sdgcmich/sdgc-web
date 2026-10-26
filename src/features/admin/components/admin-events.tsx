@@ -658,7 +658,7 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                     id="new-event-category"
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                    className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground cursor-pointer"
                   >
                     <option value="Workshops & Presentations">Workshops & Presentations</option>
                     <option value="Civic Workdays">Civic Workdays</option>
@@ -680,7 +680,7 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                     onChange={(e) =>
                       setNewStatus(e.target.value as "published" | "draft" | "cancelled")
                     }
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                    className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground cursor-pointer"
                   >
                     <option value="published">Published</option>
                     <option value="draft">Draft (Hidden)</option>
@@ -765,7 +765,7 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                   id="new-event-venue"
                   value={newVenueId}
                   onChange={(e) => setNewVenueId(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                  className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground cursor-pointer"
                 >
                   <option value="">No Venue / Virtual or TBA</option>
                   {venues.map((v) => (
@@ -1075,7 +1075,7 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                     id="edit-event-category"
                     value={editCategory}
                     onChange={(e) => setEditCategory(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none"
+                    className="w-full rounded-md border border-input bg-card p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none cursor-pointer"
                   >
                     <option value="Workshops & Presentations">Workshops & Presentations</option>
                     <option value="Civic Workdays">Civic Workdays</option>
@@ -1097,7 +1097,7 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                     onChange={(e) =>
                       setEditStatus(e.target.value as "published" | "draft" | "cancelled")
                     }
-                    className="w-full rounded-md border border-input bg-background p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none"
+                    className="w-full rounded-md border border-input bg-card p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none cursor-pointer"
                   >
                     <option value="published">Published</option>
                     <option value="draft">Draft</option>
@@ -1187,7 +1187,7 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                     const matched = venues.find((v) => v.id === vid);
                     setEditVenueName(matched ? matched.name : "");
                   }}
-                  className="w-full rounded-md border border-input bg-background p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none"
+                  className="w-full rounded-md border border-input bg-card p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none cursor-pointer"
                 >
                   <option value="">No Venue / Virtual or TBA</option>
                   {venues.map((v) => (

@@ -3,6 +3,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  color-scheme: light;
   --background: oklch(0.993 0.0017 145.5624);
   --foreground: oklch(0.2613 0.044 165.2006);
   --card: oklch(1 0 0);
@@ -58,6 +59,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.1566 0.0175 174.549);
   --foreground: oklch(0.9636 0.005 165.007);
   --card: oklch(0.2016 0.0242 171.575);
@@ -174,8 +176,36 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    color-scheme: light;
+  }
+  html.dark,
+  .dark {
+    color-scheme: dark;
+  }
   body {
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
+  }
+
+  /* Project-wide native select and option dark mode styling */
+  select {
+    color-scheme: light;
+  }
+  .dark select,
+  html.dark select {
+    color-scheme: dark;
+  }
+  select option,
+  select optgroup {
+    background-color: var(--card);
+    color: var(--card-foreground);
+  }
+  .dark select option,
+  .dark select optgroup,
+  html.dark select option,
+  html.dark select optgroup {
+    background-color: var(--card);
+    color: var(--card-foreground);
   }
 }

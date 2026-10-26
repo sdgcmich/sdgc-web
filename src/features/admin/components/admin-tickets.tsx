@@ -373,7 +373,7 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
             <select
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="w-full rounded-md border border-input bg-card text-foreground px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
             >
               <option value="all">All Events</option>
               {events.map((ev) => (
@@ -389,7 +389,7 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="w-full rounded-md border border-input bg-card text-foreground px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
             >
               <option value="all">All Statuses</option>
               <option value="confirmed">Confirmed (Pending)</option>

@@ -231,7 +231,7 @@ export function GalleryView({ albums, media }: GalleryViewProps) {
               aria-label="Filter albums by year"
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+              className="w-full h-10 rounded-md border border-input bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
             >
               <option value="all">All years</option>
               {years.map((y) => (
@@ -248,7 +248,7 @@ export function GalleryView({ albums, media }: GalleryViewProps) {
               aria-label="Filter albums by category"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+              className="w-full h-10 rounded-md border border-input bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
             >
               <option value="all">All categories</option>
               {categories.map((c) => (

@@ -1449,7 +1449,7 @@ export function AdminContent({
                   <select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value as "published" | "draft")}
-                    className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20"
+                    className="w-full rounded-xl border border-border/60 bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 cursor-pointer"
                   >
                     <option value="published">Published</option>
                     <option value="draft">Draft</option>

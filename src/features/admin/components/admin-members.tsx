@@ -948,7 +948,7 @@ export function AdminMembers({
                       onChange={(e) =>
                         setAddRole(e.target.value as "member" | "editor" | "treasurer" | "admin")
                       }
-                      className="w-full rounded-md border border-input bg-background p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none"
+                      className="w-full rounded-md border border-input bg-card p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none cursor-pointer"
                     >
                       <option value="member">Regular Member</option>
                       <option value="editor">Editor (Content & Events)</option>
@@ -967,7 +967,7 @@ export function AdminMembers({
                       id="add-status"
                       value={addStatus}
                       onChange={(e) => setAddStatus(e.target.value as "approved" | "pending")}
-                      className="w-full rounded-md border border-input bg-background p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none"
+                      className="w-full rounded-md border border-input bg-card p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none cursor-pointer"
                     >
                       <option value="approved">Approved / Active Member</option>
                       <option value="pending">Pending Approval</option>
