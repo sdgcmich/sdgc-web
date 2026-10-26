@@ -395,7 +395,7 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                   <div className="flex items-center gap-2.5 min-w-0">
                     {e.featuredImage && (
                       <Image
-                        src={e.featuredImage}
+                        src={resolveMediaUrl(e.featuredImage)}
                         alt=""
                         width={36}
                         height={36}
@@ -495,7 +495,7 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                       <div className="flex items-center gap-3">
                         {e.featuredImage && (
                           <Image
-                            src={e.featuredImage}
+                            src={resolveMediaUrl(e.featuredImage)}
                             alt=""
                             width={40}
                             height={40}

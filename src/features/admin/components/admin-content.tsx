@@ -509,6 +509,7 @@ export function AdminContent({
                     </Button>
                     <Link
                       href={p.slug === "home" ? "/" : (`/${p.slug}` as Route)}
+                      prefetch={false}
                       target="_blank"
                       className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors shadow-2xs"
                     >
@@ -567,6 +568,7 @@ export function AdminContent({
                       </Button>
                       <Link
                         href={p.slug === "home" ? "/" : (`/${p.slug}` as Route)}
+                        prefetch={false}
                         target="_blank"
                         className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors shadow-2xs"
                       >
