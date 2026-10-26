@@ -313,13 +313,13 @@ export function MemberShell({ children, userEmail, isStaff = false }: MemberShel
   return (
     <div className="flex min-h-screen bg-background text-foreground antialiased">
       {/* Desktop Sticky Sidebar (Visible only on md: 768px+) */}
-      <aside className="hidden md:flex w-64 lg:w-72 shrink-0 border-r border-border/60 bg-card flex-col sticky top-0 h-screen">
+      <aside className="hidden md:flex w-64 lg:w-72 shrink-0 border-r border-border/60 bg-card flex-col sticky top-0 h-screen print:hidden">
         <MemberSidebarContent memberGroups={memberGroups} pathname={pathname} isStaff={isStaff} />
       </aside>
 
       {/* Mobile Slide-over Drawer (Visible on < md when open) */}
       {isSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 md:hidden print:hidden" role="dialog" aria-modal="true">
           <div
             className="fixed inset-0 bg-background/80 backdrop-blur-xs transition-opacity"
             onClick={() => setIsSidebarOpen(false)}
@@ -349,7 +349,7 @@ export function MemberShell({ children, userEmail, isStaff = false }: MemberShel
       {/* Main Container Area */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Workspace Top Bar */}
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-card/95 px-4 sm:px-6 backdrop-blur-md">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-card/95 px-4 sm:px-6 backdrop-blur-md print:hidden">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"

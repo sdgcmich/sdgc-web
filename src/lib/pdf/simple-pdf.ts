@@ -94,8 +94,20 @@ export class PdfDocument {
     if (font === "Times-Roman") fontId = "/F3";
     if (font === "Courier") fontId = "/F4";
 
+    // Sanitize non-ASCII / Unicode characters to clean printable ASCII
+    // to prevent UTF-8 to WinAnsi encoding mojibake (e.g., â€¢, â€“, Ã—)
+    const sanitized = text
+      .replace(/[•·]/g, "-")
+      .replace(/[–—]/g, "-")
+      .replace(/×/g, "x")
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .replace(/…/g, "...")
+      .replace(/\u00A0/g, " ")
+      .replace(/[^\x20-\x7E]/g, "");
+
     // Escape special characters in PDF string literals: (, ), \
-    const escaped = text.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+    const escaped = sanitized.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 
     const ops = [
       "BT",

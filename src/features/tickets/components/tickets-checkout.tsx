@@ -10,6 +10,7 @@ import {
   getTicketOrderByReferenceAction,
   reconcileTicketCheckoutSessionAction,
 } from "../actions";
+import { printElement } from "@/lib/print";
 
 interface TicketsCheckoutProps {
   events: TicketEvent[];
@@ -124,7 +125,7 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
     return (
       <div className="mx-auto max-w-2xl space-y-8 py-6">
         {/* Success Header */}
-        <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-card via-card to-primary/10 p-6 sm:p-8 text-center space-y-3 shadow-sm">
+        <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-card via-card to-primary/10 p-6 sm:p-8 text-center space-y-3 shadow-sm print:hidden">
           <div className="mx-auto h-12 w-12 rounded-full bg-primary/15 text-primary flex items-center justify-center">
             <svg
               aria-hidden="true"
@@ -262,7 +263,7 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
             <p className="leading-relaxed">{confirmedOrder.checkInInstructions}</p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2 print:hidden no-print">
             <a
               href={`/api/tickets/${confirmedOrder.orderReference}/pdf`}
               target="_blank"
@@ -287,7 +288,7 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
             </a>
             <button
               type="button"
-              onClick={() => window.print()}
+              onClick={() => printElement("ticket-receipt", "SDGC Ticket Pass")}
               className="rounded-2xl border border-border bg-card px-5 py-3.5 text-center text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               Print Pass

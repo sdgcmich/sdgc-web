@@ -31,7 +31,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-10">
-      <div>
+      <div className="print:hidden">
         <span className="text-xs font-semibold uppercase tracking-wider text-primary">
           Member Dashboard
         </span>
@@ -48,7 +48,7 @@ export default async function ProfilePage() {
       {profile && <MemberCard profile={profile} />}
 
       {/* Profile Details Card */}
-      <div className="rounded-2xl border border-border bg-card p-6 sm:p-10 shadow-sm space-y-6">
+      <div className="rounded-2xl border border-border bg-card p-6 sm:p-10 shadow-sm space-y-6 print:hidden">
         <div>
           <h2 className="font-serif text-2xl font-bold text-foreground">Member Information</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -70,7 +70,7 @@ export default async function ProfilePage() {
       </div>
 
       {/* Account Security Card: Password Reset & MFA TOTP */}
-      <div className="space-y-4 pt-2">
+      <div className="space-y-4 pt-2 print:hidden">
         <AccountSecurity userEmail={user?.email} />
       </div>
     </div>

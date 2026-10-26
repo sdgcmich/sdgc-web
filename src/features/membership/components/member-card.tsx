@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { MemberProfile } from "../types";
 import { resolveMediaUrl } from "@/lib/storage/media-url";
+import { printElement } from "@/lib/print";
 
 interface MemberCardProps {
   profile: MemberProfile;
@@ -14,12 +15,12 @@ export function MemberCard({ profile }: MemberCardProps) {
   const memberCode = `SDGC-MBR-${profile.userId.slice(0, 8).toUpperCase()}`;
 
   const handlePrint = () => {
-    window.print();
+    printElement("sdgc-printable-member-card", "SDGC Member Card");
   };
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xs space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5 print:hidden">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-primary">
             Membership Credential

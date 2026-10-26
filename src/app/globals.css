@@ -209,3 +209,50 @@
     color: var(--card-foreground);
   }
 }
+
+@media print {
+  /* Hide global navigation, headers, footers, sidebars, buttons, and print:hidden elements */
+  header,
+  footer,
+  nav,
+  aside,
+  button,
+  .print\:hidden,
+  .no-print {
+    display: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html,
+  body {
+    background: #ffffff;
+    background-color: #ffffff;
+    color: #000000;
+    min-height: auto;
+  }
+
+  /* Optimize card and receipt presentation on printed page */
+  #sdgc-printable-member-card {
+    width: 100%;
+    max-width: 440px;
+    margin: 20px auto;
+    box-shadow: none;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  #ticket-receipt {
+    width: 100%;
+    max-width: 640px;
+    margin: 20px auto;
+    box-shadow: none;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}

@@ -31,7 +31,7 @@ export function generateDuesReceiptPdf(data: DuesReceiptData): Buffer {
     font: "Helvetica",
     color: [0.4, 0.4, 0.4],
   });
-  doc.drawText("A 501(c)(3) Nonprofit Organization  •  EIN: 38-2342918", 50, 705, {
+  doc.drawText("A 501(c)(3) Nonprofit Organization  |  EIN: 38-2342918", 50, 705, {
     fontSize: 8,
     font: "Helvetica",
     color: [0.45, 0.45, 0.45],

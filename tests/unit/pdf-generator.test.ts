@@ -1,3 +1,4 @@
+import zlib from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { generateDuesReceiptPdf, type DuesReceiptData } from "@/lib/pdf/dues-receipt-pdf";
 import { generateTicketPassPdf, type TicketPassData } from "@/lib/pdf/ticket-pass-pdf";
@@ -58,5 +59,17 @@ describe("PDF Generation Suite", () => {
 
     const tail = pdfBuffer.subarray(pdfBuffer.length - 10).toString("latin1");
     expect(tail).toContain("%%EOF");
+
+    // Decompress the stream and ensure no UTF-8 mojibake (like \xC3\x97 or \xE2\x80)
+    const streamStart = pdfBuffer.indexOf("stream\n") + 7;
+    const streamEnd = pdfBuffer.indexOf("\nendstream");
+    const compressed = pdfBuffer.subarray(streamStart, streamEnd);
+    const decompressed = zlib.inflateSync(compressed).toString("latin1");
+
+    expect(decompressed).not.toContain("â€¢");
+    expect(decompressed).not.toContain("â€“");
+    expect(decompressed).not.toContain("Ã—");
+    expect(decompressed).toContain("9:00 AM - 4:00 PM");
+    expect(decompressed).toContain("2 x Advance Admission Passes");
   });
 });

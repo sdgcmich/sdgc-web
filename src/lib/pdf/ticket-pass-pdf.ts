@@ -82,7 +82,7 @@ export function generateTicketPassPdf(data: TicketPassData): Buffer {
     color: [0.45, 0.45, 0.45],
   });
   doc.drawText(
-    `${data.eventDate}${data.eventTime ? ` • ${data.eventTime}` : ""}`,
+    `${data.eventDate}${data.eventTime ? ` | ${data.eventTime}` : ""}`,
     70,
     ticketTop - 90,
     {
@@ -135,7 +135,7 @@ export function generateTicketPassPdf(data: TicketPassData): Buffer {
     color: [0.45, 0.45, 0.45],
   });
   doc.drawText(
-    `${data.ticketCount} × ${data.ticketType} Pass${data.ticketCount > 1 ? "es" : ""}`,
+    `${data.ticketCount} x ${data.ticketType} Pass${data.ticketCount > 1 ? "es" : ""}`,
     70,
     ticketTop - 233,
     {
@@ -295,25 +295,25 @@ export function generateTicketPassPdf(data: TicketPassData): Buffer {
     color: [0.133, 0.38, 0.251],
   });
   doc.drawText(
-    "• Please present this printed pass or show it on your mobile device at the event registration table.",
+    "- Please present this printed pass or show it on your mobile device at the event registration table.",
     65,
     infoBoxTop - 30,
     { fontSize: 8, font: "Helvetica", color: [0.3, 0.3, 0.3] },
   );
   doc.drawText(
-    "• You will receive your official Garden Walk wristbands, garden directory guidebook, and tour map.",
+    "- You will receive your official Garden Walk wristbands, garden directory guidebook, and tour map.",
     65,
     infoBoxTop - 42,
     { fontSize: 8, font: "Helvetica", color: [0.3, 0.3, 0.3] },
   );
   doc.drawText(
-    "• Event runs rain or shine. In case of severe weather updates, check www.saugatuckdouglasgardenclub.org.",
+    "- Event runs rain or shine. In case of severe weather updates, check www.saugatuckdouglasgardenclub.org.",
     65,
     infoBoxTop - 54,
     { fontSize: 8, font: "Helvetica", color: [0.3, 0.3, 0.3] },
   );
   doc.drawText(
-    "• Ticket sales directly support public garden landscaping and horticulture scholarships in our community.",
+    "- Ticket sales directly support public garden landscaping and horticulture scholarships in our community.",
     65,
     infoBoxTop - 66,
     { fontSize: 8, font: "Helvetica", color: [0.3, 0.3, 0.3] },
@@ -322,7 +322,7 @@ export function generateTicketPassPdf(data: TicketPassData): Buffer {
   // Footer
   doc.drawLine(50, 60, 562, 60, [0.85, 0.85, 0.85], 1);
   doc.drawText(
-    "Saugatuck Douglas Garden Club  •  A 501(c)(3) Nonprofit Organization  •  EIN: 38-2342918",
+    "Saugatuck Douglas Garden Club  |  A 501(c)(3) Nonprofit Organization  |  EIN: 38-2342918",
     50,
     46,
     {
@@ -332,7 +332,7 @@ export function generateTicketPassPdf(data: TicketPassData): Buffer {
     },
   );
   doc.drawText(
-    `Order Reference: ${data.orderReference}  •  Electronic Pass generated securely by SDGC Web`,
+    `Order Reference: ${data.orderReference}  |  Electronic Pass generated securely by SDGC Web`,
     50,
     34,
     {
