@@ -12,6 +12,8 @@
       "!!**/test-results",
       "!!**/artifacts",
       "!!**/imports",
+      "!!**/.agent",
+      "!!**/.agents",
       "!src/types/database.ts"
     ]
   },

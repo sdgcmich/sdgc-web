@@ -2,7 +2,7 @@
   "mcpServers": {
     "supabase": {
       "command": "node",
-      "args": ["J:/DevDrive/sdgc/scripts/supabase-mcp-bridge.mjs"]
+      "args": ["J:/DevDrive/sdgc-web/scripts/supabase-mcp-bridge.mjs"]
     },
     "context7": {
       "serverUrl": "https://mcp.context7.com/mcp"

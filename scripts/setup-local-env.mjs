@@ -34,7 +34,6 @@ writeFileSync(
     `NEXT_PUBLIC_SUPABASE_URL=${url.origin}`,
     `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${publishableKey}`,
     `SUPABASE_SERVICE_ROLE_KEY=${status.SERVICE_ROLE_KEY}`,
-    "NEXT_PUBLIC_LOCAL_PAYMENTS_ENABLED=true",
     "LOCAL_PAYMENTS_SIMULATION=true",
     "",
   ].join("\n"),

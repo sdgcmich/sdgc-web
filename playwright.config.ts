@@ -27,7 +27,6 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
         "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH",
-      NEXT_PUBLIC_LOCAL_PAYMENTS_ENABLED: "true",
       LOCAL_PAYMENTS_SIMULATION: "true",
       ALLOW_LOCAL_PRODUCTION_BUILD_TESTING: "true",
     },

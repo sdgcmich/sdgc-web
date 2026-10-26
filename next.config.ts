@@ -54,11 +54,19 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Frame-Options", value: "DENY" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "Permissions-Policy",
+            value:
+              'camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com")',
+          },
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; frame-src 'self' https://www.google.com https://maps.google.com https://*.stripe.com https://js.stripe.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://127.0.0.1:* http://localhost:*; font-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:* https://*.supabase.co https://*.stripe.com https://api.stripe.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://*.stripe.com https://checkout.stripe.com;",
+              "default-src 'self'; frame-src 'self' https://www.google.com https://maps.google.com https://*.stripe.com https://js.stripe.com https://hooks.stripe.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://127.0.0.1:* http://localhost:* https://*.stripe.com; font-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:* https://*.supabase.co https://*.stripe.com https://api.stripe.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://*.stripe.com https://checkout.stripe.com;",
           },
         ],
       },

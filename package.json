@@ -31,6 +31,7 @@
     "db:test": "supabase test db",
     "db:types": "node scripts/generate-db-types.mjs",
     "db:provision": "node scripts/provision-local.mjs",
+    "db:mcp": "node scripts/supabase-mcp.mjs",
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
