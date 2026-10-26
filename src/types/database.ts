@@ -106,16 +106,36 @@ isOneToOne: false
                   Relationships: [
 
                   ]
-                },"events": {
+                },"event_coupons": {
                   Row: {
-                    "all_day": boolean,"category": string | null,"created_at": string,"description": string,"ends_at": string,"excerpt": string | null,"featured_image": string | null,"id": string,"slug": string,"starts_at": string,"status": string,"ticket_url": string | null,"timezone": string,"title": string,"updated_at": string,"venue_id": string | null
+                    "code": string,"created_at": string,"description": string | null,"discount_type": string,"discount_value": number,"event_id": string | null,"id": string,"is_active": boolean,"max_uses": number | null,"times_used": number,"updated_at": string,"valid_from": string | null,"valid_until": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "all_day"?: boolean,"category"?: string | null,"created_at"?: string,"description": string,"ends_at": string,"excerpt"?: string | null,"featured_image"?: string | null,"id"?: string,"slug": string,"starts_at": string,"status"?: string,"ticket_url"?: string | null,"timezone"?: string,"title": string,"updated_at"?: string,"venue_id"?: string | null
+                    "code": string,"created_at"?: string,"description"?: string | null,"discount_type"?: string,"discount_value": number,"event_id"?: string | null,"id"?: string,"is_active"?: boolean,"max_uses"?: number | null,"times_used"?: number,"updated_at"?: string,"valid_from"?: string | null,"valid_until"?: string | null
                   }
                   Update: {
-                    "all_day"?: boolean,"category"?: string | null,"created_at"?: string,"description"?: string,"ends_at"?: string,"excerpt"?: string | null,"featured_image"?: string | null,"id"?: string,"slug"?: string,"starts_at"?: string,"status"?: string,"ticket_url"?: string | null,"timezone"?: string,"title"?: string,"updated_at"?: string,"venue_id"?: string | null
+                    "code"?: string,"created_at"?: string,"description"?: string | null,"discount_type"?: string,"discount_value"?: number,"event_id"?: string | null,"id"?: string,"is_active"?: boolean,"max_uses"?: number | null,"times_used"?: number,"updated_at"?: string,"valid_from"?: string | null,"valid_until"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "event_coupons_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"events": {
+                  Row: {
+                    "all_day": boolean,"category": string | null,"child_price_cents": number | null,"created_at": string,"description": string,"ends_at": string,"excerpt": string | null,"featured_image": string | null,"id": string,"requires_tickets": boolean,"slug": string,"starts_at": string,"status": string,"student_price_cents": number | null,"ticket_price_cents": number | null,"ticket_url": string | null,"timezone": string,"title": string,"updated_at": string,"venue_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "all_day"?: boolean,"category"?: string | null,"child_price_cents"?: number | null,"created_at"?: string,"description": string,"ends_at": string,"excerpt"?: string | null,"featured_image"?: string | null,"id"?: string,"requires_tickets"?: boolean,"slug": string,"starts_at": string,"status"?: string,"student_price_cents"?: number | null,"ticket_price_cents"?: number | null,"ticket_url"?: string | null,"timezone"?: string,"title": string,"updated_at"?: string,"venue_id"?: string | null
+                  }
+                  Update: {
+                    "all_day"?: boolean,"category"?: string | null,"child_price_cents"?: number | null,"created_at"?: string,"description"?: string,"ends_at"?: string,"excerpt"?: string | null,"featured_image"?: string | null,"id"?: string,"requires_tickets"?: boolean,"slug"?: string,"starts_at"?: string,"status"?: string,"student_price_cents"?: number | null,"ticket_price_cents"?: number | null,"ticket_url"?: string | null,"timezone"?: string,"title"?: string,"updated_at"?: string,"venue_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -354,14 +374,14 @@ isOneToOne: false
                   ]
                 },"ticket_orders": {
                   Row: {
-                    "checked_in_at": string | null,"checked_in_by": string | null,"created_at": string,"event_id": string | null,"id": string,"notes": string | null,"order_reference": string,"purchaser_email": string,"purchaser_name": string,"purchaser_phone": string | null,"status": string,"stripe_payment_intent_id": string | null,"stripe_session_id": string | null,"ticket_quantity": number,"total_amount_cents": number,"unit_price_cents": number,"updated_at": string
+                    "checked_in_at": string | null,"checked_in_by": string | null,"child_quantity": number,"coupon_code": string | null,"created_at": string,"discount_amount_cents": number,"event_id": string | null,"id": string,"notes": string | null,"order_reference": string,"purchaser_email": string,"purchaser_name": string,"purchaser_phone": string | null,"status": string,"stripe_payment_intent_id": string | null,"stripe_session_id": string | null,"student_quantity": number,"ticket_quantity": number,"total_amount_cents": number,"unit_price_cents": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"event_id"?: string | null,"id"?: string,"notes"?: string | null,"order_reference": string,"purchaser_email": string,"purchaser_name": string,"purchaser_phone"?: string | null,"status"?: string,"stripe_payment_intent_id"?: string | null,"stripe_session_id"?: string | null,"ticket_quantity": number,"total_amount_cents": number,"unit_price_cents"?: number,"updated_at"?: string
+                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"child_quantity"?: number,"coupon_code"?: string | null,"created_at"?: string,"discount_amount_cents"?: number,"event_id"?: string | null,"id"?: string,"notes"?: string | null,"order_reference": string,"purchaser_email": string,"purchaser_name": string,"purchaser_phone"?: string | null,"status"?: string,"stripe_payment_intent_id"?: string | null,"stripe_session_id"?: string | null,"student_quantity"?: number,"ticket_quantity": number,"total_amount_cents": number,"unit_price_cents"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"event_id"?: string | null,"id"?: string,"notes"?: string | null,"order_reference"?: string,"purchaser_email"?: string,"purchaser_name"?: string,"purchaser_phone"?: string | null,"status"?: string,"stripe_payment_intent_id"?: string | null,"stripe_session_id"?: string | null,"ticket_quantity"?: number,"total_amount_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string
+                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"child_quantity"?: number,"coupon_code"?: string | null,"created_at"?: string,"discount_amount_cents"?: number,"event_id"?: string | null,"id"?: string,"notes"?: string | null,"order_reference"?: string,"purchaser_email"?: string,"purchaser_name"?: string,"purchaser_phone"?: string | null,"status"?: string,"stripe_payment_intent_id"?: string | null,"stripe_session_id"?: string | null,"student_quantity"?: number,"ticket_quantity"?: number,"total_amount_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {

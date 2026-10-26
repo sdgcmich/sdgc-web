@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireCapability } from "@/features/auth/authorization";
-import { listAdminTicketOrdersAction } from "@/features/tickets/actions";
+import { listAdminTicketOrdersAction, listAdminCouponsAction } from "@/features/tickets/actions";
 import { AdminTickets } from "@/features/admin/components/admin-tickets";
 
 export const metadata: Metadata = {
@@ -11,7 +11,17 @@ export const metadata: Metadata = {
 
 export default async function AdminTicketsPage() {
   await requireCapability(["events.manage", "dues.reconcile"], "/admin/tickets");
-  const { orders, stats, events } = await listAdminTicketOrdersAction();
+  const [{ orders, stats, events }, couponsRes] = await Promise.all([
+    listAdminTicketOrdersAction(),
+    listAdminCouponsAction(),
+  ]);
 
-  return <AdminTickets initialOrders={orders} initialStats={stats} initialEvents={events} />;
+  return (
+    <AdminTickets
+      initialOrders={orders}
+      initialStats={stats}
+      initialEvents={events}
+      initialCoupons={couponsRes.success && couponsRes.data ? couponsRes.data : []}
+    />
+  );
 }

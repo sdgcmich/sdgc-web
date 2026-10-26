@@ -9,12 +9,19 @@ export interface TicketEvent {
   location: string;
   advancePriceCents: number;
   dayOfPriceCents: number;
+  studentPriceCents: number;
+  childPriceCents: number;
+  requiresTickets: boolean;
+  startsAt: string;
   description: string;
 }
 
 export interface TicketCheckoutInput {
   eventId: string;
   quantity: number;
+  studentQuantity?: number;
+  childQuantity?: number;
+  couponCode?: string;
   purchaserName: string;
   purchaserEmail: string;
   purchaserPhone?: string;
@@ -30,8 +37,12 @@ export interface TicketOrder {
   eventTime: string;
   eventLocation: string;
   ticketQuantity: number;
+  studentQuantity?: number;
+  childQuantity?: number;
   unitPriceCents: number;
   totalCents: number;
+  discountAmountCents?: number;
+  couponCode?: string | null;
   purchaserName: string;
   purchaserEmail: string;
   purchaserPhone: string | null;
@@ -54,8 +65,12 @@ export interface TicketOrderListItem {
   purchaserEmail: string;
   purchaserPhone: string | null;
   ticketQuantity: number;
+  studentQuantity?: number;
+  childQuantity?: number;
   unitPriceCents: number;
   totalAmountCents: number;
+  discountAmountCents?: number;
+  couponCode?: string | null;
   status: TicketOrderStatus;
   notes: string | null;
   checkedInAt: string | null;
@@ -76,4 +91,29 @@ export interface TicketFilterInput {
   eventId?: string;
   status?: string;
   query?: string;
+}
+
+export interface TicketCoupon {
+  id: string;
+  code: string;
+  description?: string | null;
+  discountType: "percentage" | "fixed_amount";
+  discountValue: number;
+  eventId?: string | null;
+  eventTitle?: string | null;
+  validFrom?: string | null;
+  validUntil?: string | null;
+  maxUses?: number | null;
+  timesUsed: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ValidateCouponResult {
+  valid: boolean;
+  code?: string;
+  discountType?: "percentage" | "fixed_amount";
+  discountValue?: number;
+  calculatedDiscountCents?: number;
+  message?: string;
 }

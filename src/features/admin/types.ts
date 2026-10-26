@@ -92,6 +92,10 @@ export interface AdminEventRecord {
   venueId?: string;
   description?: string;
   featuredImage?: string | null;
+  requiresTickets?: boolean;
+  ticketPriceCents?: number;
+  studentPriceCents?: number;
+  childPriceCents?: number;
 }
 
 export interface AdminPageRecord {

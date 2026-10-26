@@ -166,7 +166,7 @@ describe("Remediation Package R5 — Legacy Routes, Ticketing & Importer Reconci
       });
 
       expect(res.success).toBe(true);
-      if (!res.success) throw new Error("Expected ticket order to succeed");
+      if (!res.success || !res.data) throw new Error("Expected ticket order to succeed");
       const order = res.data;
 
       expect(order.orderReference).toMatch(/^SDGC-TKT-202[67]-[A-F0-9]{6}$/);

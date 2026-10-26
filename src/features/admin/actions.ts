@@ -96,6 +96,10 @@ export async function createEventAction(input: {
   venueId?: string;
   description?: string;
   featuredImage?: string;
+  requiresTickets?: boolean;
+  ticketPriceCents?: number;
+  studentPriceCents?: number;
+  childPriceCents?: number;
 }): Promise<ActionResult> {
   const user = await requireCapability("events.manage");
   const supabase = await createClient();
@@ -117,6 +121,10 @@ export async function createEventAction(input: {
       venue_id: input.venueId || null,
       description,
       featured_image: input.featuredImage?.trim() || null,
+      requires_tickets: Boolean(input.requiresTickets),
+      ticket_price_cents: input.ticketPriceCents ?? 2000,
+      student_price_cents: input.studentPriceCents ?? 1000,
+      child_price_cents: input.childPriceCents ?? 0,
     })
     .select("id")
     .single();
@@ -675,6 +683,10 @@ export async function updateEventAction(input: {
   venueId?: string;
   venueName?: string;
   featuredImage?: string | null;
+  requiresTickets?: boolean;
+  ticketPriceCents?: number;
+  studentPriceCents?: number;
+  childPriceCents?: number;
 }): Promise<ActionResult> {
   const user = await requireCapability("events.manage");
   const supabase = await createClient();
@@ -713,6 +725,22 @@ export async function updateEventAction(input: {
 
   if (input.featuredImage !== undefined) {
     updatePayload.featured_image = input.featuredImage?.trim() || null;
+  }
+
+  if (input.requiresTickets !== undefined) {
+    updatePayload.requires_tickets = input.requiresTickets;
+  }
+
+  if (input.ticketPriceCents !== undefined) {
+    updatePayload.ticket_price_cents = input.ticketPriceCents;
+  }
+
+  if (input.studentPriceCents !== undefined) {
+    updatePayload.student_price_cents = input.studentPriceCents;
+  }
+
+  if (input.childPriceCents !== undefined) {
+    updatePayload.child_price_cents = input.childPriceCents;
   }
 
   const { error } = await supabase.from("events").update(updatePayload).eq("id", input.id);

@@ -91,6 +91,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
   const [newVenueId, setNewVenueId] = React.useState<string>("");
   const [newDescription, setNewDescription] = React.useState("");
   const [newFeaturedImage, setNewFeaturedImage] = React.useState("");
+  const [newRequiresTickets, setNewRequiresTickets] = React.useState(false);
+  const [newTicketPrice, setNewTicketPrice] = React.useState("20.00");
+  const [newStudentPrice, setNewStudentPrice] = React.useState("10.00");
+  const [newChildPrice, setNewChildPrice] = React.useState("0.00");
   const [newDescriptionTab, setNewDescriptionTab] = React.useState<"write" | "preview">("write");
   const newTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
@@ -118,6 +122,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
   const [editVenueName, setEditVenueName] = React.useState("");
   const [editVenueId, setEditVenueId] = React.useState<string | undefined>(undefined);
   const [editFeaturedImage, setEditFeaturedImage] = React.useState("");
+  const [editRequiresTickets, setEditRequiresTickets] = React.useState(false);
+  const [editTicketPrice, setEditTicketPrice] = React.useState("20.00");
+  const [editStudentPrice, setEditStudentPrice] = React.useState("10.00");
+  const [editChildPrice, setEditChildPrice] = React.useState("0.00");
   const [editDescriptionTab, setEditDescriptionTab] = React.useState<"write" | "preview">("write");
   const editTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
@@ -133,6 +141,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
     setEditVenueName(e.venueName || "");
     setEditVenueId(e.venueId);
     setEditFeaturedImage(e.featuredImage || "");
+    setEditRequiresTickets(e.requiresTickets ?? false);
+    setEditTicketPrice(((e.ticketPriceCents ?? 2000) / 100).toFixed(2));
+    setEditStudentPrice(((e.studentPriceCents ?? 1000) / 100).toFixed(2));
+    setEditChildPrice(((e.childPriceCents ?? 0) / 100).toFixed(2));
     setEditDescriptionTab("write");
     setShowVenueCreator(false);
   };
@@ -221,6 +233,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
       const startsAtIso = parseDetroitDateTimeLocal(newStartsAt);
       const endsAtIso = newEndsAt ? parseDetroitDateTimeLocal(newEndsAt) : undefined;
       const matchedVenue = venues.find((v) => v.id === newVenueId);
+      const ticketPriceCents = Math.round((parseFloat(newTicketPrice) || 0) * 100);
+      const studentPriceCents = Math.round((parseFloat(newStudentPrice) || 0) * 100);
+      const childPriceCents = Math.round((parseFloat(newChildPrice) || 0) * 100);
+
       const res = await createEventAction({
         title: newTitle.trim(),
         slug: sanitizedSlug,
@@ -231,6 +247,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
         venueId: newVenueId || undefined,
         description: newDescription.trim() || undefined,
         featuredImage: newFeaturedImage.trim() || undefined,
+        requiresTickets: newRequiresTickets,
+        ticketPriceCents,
+        studentPriceCents,
+        childPriceCents,
       });
 
       if (res.success && res.data) {
@@ -249,6 +269,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
             venueName: matchedVenue ? matchedVenue.name : undefined,
             description: newDescription.trim() || undefined,
             featuredImage: newFeaturedImage.trim() || undefined,
+            requiresTickets: newRequiresTickets,
+            ticketPriceCents,
+            studentPriceCents,
+            childPriceCents,
           },
         ]);
         setNotice(`Event "${newTitle}" created and saved successfully.`);
@@ -258,6 +282,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
         setNewVenueId("");
         setNewDescription("");
         setNewFeaturedImage("");
+        setNewRequiresTickets(false);
+        setNewTicketPrice("20.00");
+        setNewStudentPrice("10.00");
+        setNewChildPrice("0.00");
         setShowVenueCreator(false);
       } else {
         setIsError(true);
@@ -279,6 +307,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
     try {
       const startsAtIso = parseDetroitDateTimeLocal(editStartsAt);
       const endsAtIso = editEndsAt ? parseDetroitDateTimeLocal(editEndsAt) : undefined;
+      const ticketPriceCents = Math.round((parseFloat(editTicketPrice) || 0) * 100);
+      const studentPriceCents = Math.round((parseFloat(editStudentPrice) || 0) * 100);
+      const childPriceCents = Math.round((parseFloat(editChildPrice) || 0) * 100);
+
       const res = await updateEventAction({
         id: editingEvent.id,
         title: editTitle.trim(),
@@ -291,6 +323,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
         venueId: editVenueId ?? editingEvent.venueId,
         venueName: editVenueName.trim() || undefined,
         featuredImage: editFeaturedImage.trim() || null,
+        requiresTickets: editRequiresTickets,
+        ticketPriceCents,
+        studentPriceCents,
+        childPriceCents,
       });
 
       if (res.success) {
@@ -309,6 +345,10 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                   venueId: editVenueId ?? editingEvent.venueId,
                   venueName: editVenueName.trim() || undefined,
                   featuredImage: editFeaturedImage.trim() || null,
+                  requiresTickets: editRequiresTickets,
+                  ticketPriceCents,
+                  studentPriceCents,
+                  childPriceCents,
                 }
               : item,
           ),
@@ -441,6 +481,15 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                   <div className="text-[11px] truncate">
                     {e.venueName || "Location Announced Upon Registration"}
                   </div>
+                  <div className="pt-1">
+                    {e.requiresTickets ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                        🎟️ Passes: ${((e.ticketPriceCents ?? 0) / 100).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">Free / Open Event</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
@@ -477,6 +526,7 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                 <th className="p-4">Date &amp; Time (Detroit)</th>
                 <th className="p-4">Venue</th>
                 <th className="p-4">Category / Excerpt</th>
+                <th className="p-4">Ticketing</th>
                 <th className="p-4">Status</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
@@ -484,7 +534,7 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
             <tbody className="divide-y divide-border">
               {events.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-muted-foreground text-xs">
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground text-xs">
                     No scheduled events found.
                   </td>
                 </tr>
@@ -522,6 +572,26 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                         <span className="text-xs text-muted-foreground line-clamp-2 block leading-snug">
                           {e.category}
                         </span>
+                      )}
+                    </td>
+                    <td className="p-4 whitespace-nowrap text-xs">
+                      {e.requiresTickets ? (
+                        <div className="space-y-0.5">
+                          <Badge
+                            variant="outline"
+                            className="border-emerald-600/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 text-[11px]"
+                          >
+                            🎟️ ${((e.ticketPriceCents ?? 0) / 100).toFixed(2)}
+                          </Badge>
+                          <div className="text-[10px] text-muted-foreground">
+                            Stu: ${((e.studentPriceCents ?? 0) / 100).toFixed(2)} • Kid:{" "}
+                            {(e.childPriceCents ?? 0) > 0
+                              ? `$${((e.childPriceCents ?? 0) / 100).toFixed(2)}`
+                              : "Free"}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">Free / Open</span>
                       )}
                     </td>
                     <td className="p-4 whitespace-nowrap">
@@ -963,6 +1033,80 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                 )}
               </div>
 
+              {/* Ticketing Requirement & Pricing Controls */}
+              <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    id="new-event-requires-tickets"
+                    checked={newRequiresTickets}
+                    onChange={(e) => setNewRequiresTickets(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  />
+                  <label
+                    htmlFor="new-event-requires-tickets"
+                    className="text-xs font-bold text-foreground cursor-pointer select-none"
+                  >
+                    Requires Ticket or Registration Pass
+                  </label>
+                </div>
+                {newRequiresTickets && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-border/40">
+                    <div>
+                      <label
+                        htmlFor="new-ticket-price"
+                        className="block text-[11px] font-semibold text-muted-foreground mb-1"
+                      >
+                        General Admission ($)
+                      </label>
+                      <Input
+                        id="new-ticket-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newTicketPrice}
+                        onChange={(e) => setNewTicketPrice(e.target.value)}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="new-student-price"
+                        className="block text-[11px] font-semibold text-muted-foreground mb-1"
+                      >
+                        Student Discount ($)
+                      </label>
+                      <Input
+                        id="new-student-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newStudentPrice}
+                        onChange={(e) => setNewStudentPrice(e.target.value)}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="new-child-price"
+                        className="block text-[11px] font-semibold text-muted-foreground mb-1"
+                      >
+                        Children ($ / 0 = Free)
+                      </label>
+                      <Input
+                        id="new-child-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newChildPrice}
+                        onChange={(e) => setNewChildPrice(e.target.value)}
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t border-border">
                 <Button
                   type="button"
@@ -1380,6 +1524,80 @@ export function AdminEvents({ initialEvents, initialVenues = [] }: AdminEventsPr
                     <MarkdownContent
                       content={editDescription || "*No event description written yet.*"}
                     />
+                  </div>
+                )}
+              </div>
+
+              {/* Ticketing Requirement & Pricing Controls */}
+              <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    id="edit-event-requires-tickets"
+                    checked={editRequiresTickets}
+                    onChange={(e) => setEditRequiresTickets(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  />
+                  <label
+                    htmlFor="edit-event-requires-tickets"
+                    className="text-xs font-bold text-foreground cursor-pointer select-none"
+                  >
+                    Requires Ticket or Registration Pass
+                  </label>
+                </div>
+                {editRequiresTickets && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-border/40">
+                    <div>
+                      <label
+                        htmlFor="edit-ticket-price"
+                        className="block text-[11px] font-semibold text-muted-foreground mb-1"
+                      >
+                        General Admission ($)
+                      </label>
+                      <Input
+                        id="edit-ticket-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editTicketPrice}
+                        onChange={(e) => setEditTicketPrice(e.target.value)}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="edit-student-price"
+                        className="block text-[11px] font-semibold text-muted-foreground mb-1"
+                      >
+                        Student Discount ($)
+                      </label>
+                      <Input
+                        id="edit-student-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editStudentPrice}
+                        onChange={(e) => setEditStudentPrice(e.target.value)}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="edit-child-price"
+                        className="block text-[11px] font-semibold text-muted-foreground mb-1"
+                      >
+                        Children ($ / 0 = Free)
+                      </label>
+                      <Input
+                        id="edit-child-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editChildPrice}
+                        onChange={(e) => setEditChildPrice(e.target.value)}
+                        className="text-xs"
+                      />
+                    </div>
                   </div>
                 )}
               </div>

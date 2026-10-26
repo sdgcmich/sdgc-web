@@ -7,6 +7,9 @@ export const ticketCheckoutSchema = z.object({
     .int("Quantity must be a whole number.")
     .min(1, "You must order at least 1 ticket.")
     .max(20, "Maximum 20 tickets per order."),
+  studentQuantity: z.number().int().min(0).max(20).optional(),
+  childQuantity: z.number().int().min(0).max(20).optional(),
+  couponCode: z.string().trim().max(50).optional(),
   purchaserName: z
     .string()
     .trim()

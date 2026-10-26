@@ -222,6 +222,10 @@ export async function getAdminEvents(): Promise<AdminEventRecord[]> {
       description,
       venue_id,
       featured_image,
+      requires_tickets,
+      ticket_price_cents,
+      student_price_cents,
+      child_price_cents,
       venues (
         name
       )
@@ -245,6 +249,10 @@ export async function getAdminEvents(): Promise<AdminEventRecord[]> {
     venueId: e.venue_id ?? undefined,
     description: e.description,
     featuredImage: e.featured_image ? resolveMediaUrl(e.featured_image) : undefined,
+    requiresTickets: Boolean(e.requires_tickets),
+    ticketPriceCents: e.ticket_price_cents ?? 2000,
+    studentPriceCents: e.student_price_cents ?? 1000,
+    childPriceCents: e.child_price_cents ?? 0,
   }));
 }
 

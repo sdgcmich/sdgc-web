@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { MemberProfile } from "../types";
 import { resolveMediaUrl } from "@/lib/storage/media-url";
 import { printElement } from "@/lib/print";
+import { QRCodeDisplay } from "@/components/ui/qr-code";
 
 interface MemberCardProps {
   profile: MemberProfile;
@@ -114,31 +115,44 @@ export function MemberCard({ profile }: MemberCardProps) {
               </div>
             </div>
 
-            {/* Badges & Credential Info */}
-            <div className="grid grid-cols-2 gap-3 pt-2 text-xs border-t border-border/60">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                  Valid Term
-                </span>
-                <span className="font-semibold text-foreground">{membershipTerm}</span>
+            {/* Badges, Credential Info & Verification QR */}
+            <div className="flex items-center justify-between gap-4 pt-3 text-xs border-t border-border/60">
+              <div className="space-y-2.5 flex-1">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                    Valid Term
+                  </span>
+                  <span className="font-semibold text-foreground">{membershipTerm}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                    Member ID
+                  </span>
+                  <span className="font-mono font-bold text-foreground text-[11px] block">
+                    {memberCode}
+                  </span>
+                </div>
+                {profile.masterGardener && (
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-bold text-primary">
+                      🌱 Master Gardener
+                    </span>
+                  </div>
+                )}
               </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                  Member ID
-                </span>
-                <span className="font-mono font-bold text-foreground text-[11px]">
-                  {memberCode}
-                </span>
+
+              <div className="shrink-0 text-center">
+                <QRCodeDisplay
+                  value={
+                    typeof window !== "undefined"
+                      ? `${window.location.origin}/verify/member/${memberCode}`
+                      : `https://saugatuckdouglasgardenclub.org/verify/member/${memberCode}`
+                  }
+                  size={78}
+                  label="Scan to Verify"
+                />
               </div>
             </div>
-
-            {profile.masterGardener && (
-              <div className="pt-2">
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-bold text-primary">
-                  🌱 Certified Master Gardener
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </div>

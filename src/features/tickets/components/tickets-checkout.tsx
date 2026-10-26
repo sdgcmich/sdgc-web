@@ -9,8 +9,10 @@ import {
   processTicketOrderAction,
   getTicketOrderByReferenceAction,
   reconcileTicketCheckoutSessionAction,
+  validateCouponCodeAction,
 } from "../actions";
 import { printElement } from "@/lib/print";
+import { QRCodeDisplay } from "@/components/ui/qr-code";
 
 interface TicketsCheckoutProps {
   events: TicketEvent[];
@@ -23,8 +25,11 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
   const paymentStatus = searchParams.get("payment_status");
   const isSuccess = searchParams.get("success") === "true" || paymentStatus === "success";
 
+  // Events are already sorted soonest first from getTicketEvents()
   const [selectedEventId, setSelectedEventId] = useState<string>(events[0]?.id || "gw-2026");
   const [quantity, setQuantity] = useState<number>(2);
+  const [studentQuantity, setStudentQuantity] = useState<number>(0);
+  const [childQuantity, setChildQuantity] = useState<number>(0);
   const [purchaserName, setPurchaserName] = useState<string>("");
   const [purchaserEmail, setPurchaserEmail] = useState<string>("");
   const [purchaserPhone, setPurchaserPhone] = useState<string>("");
@@ -32,6 +37,21 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [confirmedOrder, setConfirmedOrder] = useState<TicketOrder | null>(null);
+
+  // Coupon state
+  const [couponInput, setCouponInput] = useState<string>("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountType: "percentage" | "fixed_amount";
+    discountValue: number;
+    calculatedDiscountCents: number;
+    message: string;
+  } | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState<boolean>(false);
+  const [couponFeedback, setCouponFeedback] = useState<{
+    message: string;
+    isError?: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (!confirmedOrder) {
@@ -74,14 +94,85 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
   }, [sessionId, orderRef, isSuccess, confirmedOrder]);
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) || events[0];
-  const unitPrice = selectedEvent ? selectedEvent.advancePriceCents / 100 : 15;
-  const dayOfPrice = selectedEvent ? selectedEvent.dayOfPriceCents / 100 : 20;
-  const totalPrice = unitPrice * quantity;
+  const unitPrice = selectedEvent ? selectedEvent.advancePriceCents / 100 : 20;
+  const studentPrice = selectedEvent?.studentPriceCents
+    ? selectedEvent.studentPriceCents / 100
+    : 10;
+  const childPrice = selectedEvent?.childPriceCents ? selectedEvent.childPriceCents / 100 : 0;
+  const dayOfPrice = selectedEvent ? selectedEvent.dayOfPriceCents / 100 : 25;
+
+  const totalAdmissions = quantity + studentQuantity + childQuantity;
+  const adultSubtotalCents = quantity * (selectedEvent ? selectedEvent.advancePriceCents : 2000);
+  const studentSubtotalCents = studentQuantity * (selectedEvent?.studentPriceCents ?? 1000);
+  const childSubtotalCents = childQuantity * (selectedEvent?.childPriceCents ?? 0);
+  const subtotalCents = adultSubtotalCents + studentSubtotalCents + childSubtotalCents;
+
+  let discountAmountCents = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discountType === "percentage") {
+      discountAmountCents = Math.round((subtotalCents * appliedCoupon.discountValue) / 100);
+    } else {
+      discountAmountCents = Math.min(subtotalCents, appliedCoupon.discountValue);
+    }
+  }
+
+  const finalTotalCents = Math.max(0, subtotalCents - discountAmountCents);
+  const totalPrice = finalTotalCents / 100;
   const totalSavings = (dayOfPrice - unitPrice) * quantity;
+
+  async function handleApplyCoupon() {
+    if (!couponInput.trim()) return;
+    setIsValidatingCoupon(true);
+    setCouponFeedback(null);
+    try {
+      const res = await validateCouponCodeAction(
+        couponInput.trim(),
+        selectedEventId,
+        subtotalCents,
+      );
+      if (res.success && res.data) {
+        if (
+          res.data.valid &&
+          res.data.code &&
+          res.data.discountType &&
+          res.data.discountValue !== undefined &&
+          res.data.calculatedDiscountCents !== undefined
+        ) {
+          setAppliedCoupon({
+            code: res.data.code,
+            discountType: res.data.discountType,
+            discountValue: res.data.discountValue,
+            calculatedDiscountCents: res.data.calculatedDiscountCents,
+            message: res.data.message || "Coupon applied successfully",
+          });
+          setCouponFeedback({ message: res.data.message || "Coupon applied successfully" });
+        } else {
+          setCouponFeedback({ message: res.data.message || "Invalid coupon code.", isError: true });
+        }
+      } else {
+        setCouponFeedback({ message: res.error || "Invalid coupon code.", isError: true });
+      }
+    } catch {
+      setCouponFeedback({ message: "Failed to validate coupon code.", isError: true });
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  }
+
+  function handleRemoveCoupon() {
+    setAppliedCoupon(null);
+    setCouponFeedback(null);
+    setCouponInput("");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMessage(null);
+
+    if (totalAdmissions < 1) {
+      setErrorMessage("Please select at least one ticket admission pass.");
+      return;
+    }
 
     if (!purchaserName.trim()) {
       setErrorMessage("Please enter your full name.");
@@ -99,6 +190,9 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
       const res = await processTicketOrderAction({
         eventId: selectedEventId,
         quantity,
+        studentQuantity,
+        childQuantity,
+        couponCode: appliedCoupon?.code,
         purchaserName: purchaserName.trim(),
         purchaserEmail: purchaserEmail.trim(),
         purchaserPhone: purchaserPhone.trim() || undefined,
@@ -195,6 +289,32 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
             </div>
           </div>
 
+          {/* Mobile QR Verification Pass Card */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 bg-muted/40 p-4 rounded-2xl border border-border/60">
+            <div className="bg-white p-2 rounded-xl shadow-xs border border-border shrink-0">
+              <QRCodeDisplay value={`/verify/ticket/${confirmedOrder.orderReference}`} size={88} />
+            </div>
+            <div className="space-y-1.5 text-center sm:text-left">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                ✓ Valid Ticket Pass &bull; Scan at Gate
+              </span>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Present this QR code on your mobile phone or printed pass to gate volunteers for
+                instant one-tap entrance verification.
+              </p>
+              <div>
+                <Link
+                  href={`/verify/ticket/${confirmedOrder.orderReference}` as Route}
+                  target="_blank"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  <span>Open Gate Pass Verification Page</span>
+                  <span aria-hidden="true">&rarr;</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-4">
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-primary">
@@ -228,18 +348,38 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
           {/* Pricing & Admissions Table */}
           <div className="rounded-2xl bg-muted/40 p-4 space-y-2.5 border border-border/60 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Admissions Quantity</span>
+              <span className="text-muted-foreground">Adult Admissions</span>
               <span className="font-semibold text-foreground">
-                {confirmedOrder.ticketQuantity} admission
-                {confirmedOrder.ticketQuantity > 1 ? "s" : ""}
+                {confirmedOrder.ticketQuantity} pass{confirmedOrder.ticketQuantity > 1 ? "es" : ""}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Advance Unit Price</span>
-              <span className="text-foreground">
-                ${(confirmedOrder.unitPriceCents / 100).toFixed(2)}
-              </span>
-            </div>
+            {(confirmedOrder.studentQuantity ?? 0) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Student Discount Passes</span>
+                <span className="font-semibold text-foreground">
+                  {confirmedOrder.studentQuantity} pass
+                  {(confirmedOrder.studentQuantity ?? 0) > 1 ? "es" : ""}
+                </span>
+              </div>
+            )}
+            {(confirmedOrder.childQuantity ?? 0) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Children Passes</span>
+                <span className="font-semibold text-foreground">
+                  {confirmedOrder.childQuantity} pass
+                  {(confirmedOrder.childQuantity ?? 0) > 1 ? "es" : ""}
+                </span>
+              </div>
+            )}
+            {(confirmedOrder.discountAmountCents ?? 0) > 0 && (
+              <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span>
+                  Promotional Discount{" "}
+                  {confirmedOrder.couponCode ? `(${confirmedOrder.couponCode})` : ""}
+                </span>
+                <span>-${((confirmedOrder.discountAmountCents ?? 0) / 100).toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-border/80 pt-2.5 text-base font-bold">
               <span className="text-foreground">Total Paid (Simulated)</span>
               <span className="text-primary text-lg">
@@ -458,55 +598,119 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
             )}
           </div>
 
-          {/* Ticket Quantity Stepper */}
-          <div className="rounded-3xl border border-border bg-card p-6 shadow-xs space-y-4">
-            <span className="block text-sm font-bold text-foreground">2. Number of Admissions</span>
+          {/* Ticket Quantity Stepper: Tiered Admissions */}
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-xs space-y-5">
+            <div>
+              <span className="block text-sm font-bold text-foreground">
+                2. Select Admissions &amp; Pass Tiers
+              </span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Choose quantities for adult, student discount, or children admissions.
+              </p>
+            </div>
 
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center rounded-2xl border border-border bg-muted/20 p-1">
+            {/* Adult Tier */}
+            <div className="flex items-center justify-between gap-4 p-3.5 rounded-2xl bg-muted/30 border border-border/60">
+              <div>
+                <div className="font-semibold text-sm text-foreground">
+                  General Admission (Adult)
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  ${unitPrice.toFixed(2)} advance (${dayOfPrice.toFixed(2)} day-of)
+                </div>
+              </div>
+              <div className="flex items-center rounded-xl border border-border bg-card p-0.5 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-card text-foreground hover:bg-muted font-bold text-lg shadow-2xs transition-colors cursor-pointer"
-                  aria-label="Decrease tickets"
+                  onClick={() => setQuantity((q) => Math.max(0, q - 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground hover:bg-muted font-bold text-base transition-colors cursor-pointer"
+                  aria-label="Decrease adult tickets"
                 >
                   &minus;
                 </button>
-                <span className="font-mono text-xl font-bold text-foreground w-12 text-center">
+                <span className="font-mono text-sm font-bold text-foreground w-9 text-center">
                   {quantity}
                 </span>
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.min(20, q + 1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-card text-foreground hover:bg-muted font-bold text-lg shadow-2xs transition-colors cursor-pointer"
-                  aria-label="Increase tickets"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground hover:bg-muted font-bold text-base transition-colors cursor-pointer"
+                  aria-label="Increase adult tickets"
                 >
                   &#43;
                 </button>
               </div>
+            </div>
 
-              {/* Quick Select Buttons */}
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 4, 6].map((count) => (
-                  <button
-                    key={count}
-                    type="button"
-                    onClick={() => setQuantity(count)}
-                    className={`h-8 px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                      quantity === count
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }`}
-                  >
-                    {count}
-                  </button>
-                ))}
+            {/* Student Discount Tier */}
+            <div className="flex items-center justify-between gap-4 p-3.5 rounded-2xl bg-muted/30 border border-border/60">
+              <div>
+                <div className="font-semibold text-sm text-foreground">Student Discount Pass</div>
+                <div className="text-xs text-muted-foreground">
+                  ${studentPrice.toFixed(2)} each (High school &amp; college with ID)
+                </div>
+              </div>
+              <div className="flex items-center rounded-xl border border-border bg-card p-0.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setStudentQuantity((q) => Math.max(0, q - 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground hover:bg-muted font-bold text-base transition-colors cursor-pointer"
+                  aria-label="Decrease student tickets"
+                >
+                  &minus;
+                </button>
+                <span className="font-mono text-sm font-bold text-foreground w-9 text-center">
+                  {studentQuantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setStudentQuantity((q) => Math.min(20, q + 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground hover:bg-muted font-bold text-base transition-colors cursor-pointer"
+                  aria-label="Increase student tickets"
+                >
+                  &#43;
+                </button>
+              </div>
+            </div>
+
+            {/* Children Tier */}
+            <div className="flex items-center justify-between gap-4 p-3.5 rounded-2xl bg-muted/30 border border-border/60">
+              <div>
+                <div className="font-semibold text-sm text-foreground">
+                  Children (Ages 12 &amp; Under)
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {childPrice > 0
+                    ? `$${childPrice.toFixed(2)} each`
+                    : "Free admission with ticketed adult"}
+                </div>
+              </div>
+              <div className="flex items-center rounded-xl border border-border bg-card p-0.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setChildQuantity((q) => Math.max(0, q - 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground hover:bg-muted font-bold text-base transition-colors cursor-pointer"
+                  aria-label="Decrease child tickets"
+                >
+                  &minus;
+                </button>
+                <span className="font-mono text-sm font-bold text-foreground w-9 text-center">
+                  {childQuantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setChildQuantity((q) => Math.min(20, q + 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground hover:bg-muted font-bold text-base transition-colors cursor-pointer"
+                  aria-label="Increase child tickets"
+                >
+                  &#43;
+                </button>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
-              <span className="text-muted-foreground">
-                ${unitPrice.toFixed(2)} each in advance &bull; ${dayOfPrice.toFixed(2)} day of tour
+              <span className="text-muted-foreground font-medium">
+                Total Admissions: {totalAdmissions} pass{totalAdmissions === 1 ? "" : "es"}
               </span>
               {totalSavings > 0 && (
                 <span className="font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
@@ -516,9 +720,57 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
             </div>
           </div>
 
+          {/* Coupon Code Section */}
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-xs space-y-3">
+            <span className="block text-sm font-bold text-foreground">
+              3. Promotional or Member Coupon
+            </span>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponInput}
+                onChange={(e) =>
+                  setCouponInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))
+                }
+                placeholder="e.g. GARDEN20, EARLYBIRD"
+                disabled={Boolean(appliedCoupon)}
+                className="flex-1 rounded-2xl border border-border bg-card px-4 py-3 text-xs font-mono uppercase tracking-wider text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60"
+              />
+              {appliedCoupon ? (
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="rounded-2xl border border-border bg-card px-4 py-3 text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                >
+                  Remove
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={isValidatingCoupon || !couponInput.trim()}
+                  className="rounded-2xl bg-primary px-5 py-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {isValidatingCoupon ? "Checking..." : "Apply Code"}
+                </button>
+              )}
+            </div>
+            {couponFeedback && (
+              <p
+                className={`text-xs ${
+                  couponFeedback.isError
+                    ? "text-destructive"
+                    : "text-emerald-700 dark:text-emerald-400 font-medium"
+                }`}
+              >
+                {couponFeedback.message}
+              </p>
+            )}
+          </div>
+
           {/* Purchaser Contact Information */}
           <div className="rounded-3xl border border-border bg-card p-6 shadow-xs space-y-4">
-            <h3 className="text-sm font-bold text-foreground">3. Purchaser Contact Details</h3>
+            <h3 className="text-sm font-bold text-foreground">4. Purchaser Contact Details</h3>
 
             <div className="space-y-4">
               <div>
@@ -658,15 +910,33 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
 
             <div className="space-y-3 text-sm border-t border-border/80 pt-4">
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Quantity</span>
+                <span className="text-muted-foreground">Adult Admissions</span>
                 <span className="font-semibold text-foreground">
-                  {quantity} admission{quantity > 1 ? "s" : ""}
+                  {quantity} &times; ${unitPrice.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Advance Price</span>
-                <span className="text-foreground">${unitPrice.toFixed(2)} each</span>
-              </div>
+              {studentQuantity > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Student Passes</span>
+                  <span className="font-semibold text-foreground">
+                    {studentQuantity} &times; ${studentPrice.toFixed(2)}
+                  </span>
+                </div>
+              )}
+              {childQuantity > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Children Passes</span>
+                  <span className="font-semibold text-foreground">
+                    {childQuantity} &times; {childPrice > 0 ? `$${childPrice.toFixed(2)}` : "FREE"}
+                  </span>
+                </div>
+              )}
+              {appliedCoupon && (
+                <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <span>Coupon ({appliedCoupon.code})</span>
+                  <span>-${(discountAmountCents / 100).toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Processing Fees</span>
                 <span className="font-semibold text-emerald-600 dark:text-emerald-400">

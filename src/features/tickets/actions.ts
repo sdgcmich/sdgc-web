@@ -2,7 +2,7 @@
 
 import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
-import type { ActionResult } from "@/features/auth/types";
+import type { ActionResult } from "@/features/admin/types";
 import { requireCapability } from "@/features/auth/authorization";
 import { isSimulationAllowed } from "@/features/payments/local-provider";
 import { stripePaymentProvider } from "@/features/payments/stripe-provider";
@@ -11,11 +11,13 @@ import { createClient } from "@/lib/supabase/server";
 import { ticketCheckoutSchema } from "./validation";
 import type {
   TicketCheckoutInput,
+  TicketCoupon,
   TicketEvent,
   TicketFilterInput,
   TicketOrder,
   TicketOrderListItem,
   TicketStats,
+  ValidateCouponResult,
 } from "./types";
 
 function safeRevalidatePath(path: string): void {
@@ -34,19 +36,39 @@ export async function getTicketEvents(): Promise<TicketEvent[]> {
     const { data } = await supabase
       .from("events")
       .select(
-        "id, slug, title, starts_at, ends_at, description, ticket_url, venues(name, city, state)",
+        "id, slug, title, starts_at, ends_at, description, ticket_url, requires_tickets, ticket_price_cents, student_price_cents, child_price_cents, venues(name, city, state)",
       )
-      .not("ticket_url", "is", null)
       .eq("status", "published")
       .order("starts_at", { ascending: true });
 
     if (data && data.length > 0) {
-      for (const row of data) {
+      // Filter events that require tickets or have ticket_url configured
+      const ticketingEvents = data.filter(
+        (row) => row.requires_tickets === true || row.ticket_url !== null,
+      );
+
+      // Sort upcoming events first (soonest expiring / starts_at closest to now ascending)
+      const nowMs = Date.now();
+      ticketingEvents.sort((a, b) => {
+        const aTime = new Date(a.starts_at).getTime();
+        const bTime = new Date(b.starts_at).getTime();
+        const aUpcoming = aTime >= nowMs;
+        const bUpcoming = bTime >= nowMs;
+        if (aUpcoming && !bUpcoming) return -1;
+        if (!aUpcoming && bUpcoming) return 1;
+        return aTime - bTime;
+      });
+
+      for (const row of ticketingEvents) {
         const startDate = new Date(row.starts_at);
         const venueInfo = row.venues as { name?: string; city?: string; state?: string } | null;
         const location = venueInfo?.name
           ? `${venueInfo.name}, ${venueInfo.city || "Saugatuck"}, ${venueInfo.state || "MI"}`
           : "Saugatuck & Douglas, MI";
+
+        const advancePrice = row.ticket_price_cents ?? 1500;
+        const studentPrice = row.student_price_cents ?? 1000;
+        const childPrice = row.child_price_cents ?? 0;
 
         events.push({
           id: row.id,
@@ -65,8 +87,12 @@ export async function getTicketEvents(): Promise<TicketEvent[]> {
             minute: "2-digit",
           }),
           location,
-          advancePriceCents: 1500,
-          dayOfPriceCents: 2000,
+          advancePriceCents: advancePrice,
+          dayOfPriceCents: advancePrice + 500,
+          studentPriceCents: studentPrice,
+          childPriceCents: childPrice,
+          requiresTickets: Boolean(row.requires_tickets),
+          startsAt: row.starts_at,
           description: row.description || "",
         });
       }
@@ -121,7 +147,57 @@ export async function processTicketOrderAction(
   const eventYear = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
   const orderSuffix = crypto.randomBytes(3).toString("hex").toUpperCase();
   const orderReference = `SDGC-TKT-${eventYear}-${orderSuffix}`;
-  const totalCents = input.quantity * selectedEvent.advancePriceCents;
+
+  const studentQuantity = Math.max(0, input.studentQuantity ?? 0);
+  const childQuantity = Math.max(0, input.childQuantity ?? 0);
+  const adultQuantity = Math.max(0, input.quantity - studentQuantity - childQuantity);
+
+  const adultPriceCents = selectedEvent.advancePriceCents;
+  const studentPriceCents = selectedEvent.studentPriceCents;
+  const childPriceCents = selectedEvent.childPriceCents;
+
+  const subtotalCents =
+    adultQuantity * adultPriceCents +
+    studentQuantity * studentPriceCents +
+    childQuantity * childPriceCents;
+
+  // Coupon evaluation
+  let discountAmountCents = 0;
+  let appliedCouponCode: string | null = null;
+
+  if (input.couponCode?.trim()) {
+    const couponValidation = await validateCouponCodeAction(
+      input.couponCode.trim(),
+      selectedEvent.id,
+      subtotalCents,
+    );
+    if (couponValidation.success && couponValidation.data?.valid) {
+      discountAmountCents = couponValidation.data.calculatedDiscountCents ?? 0;
+      appliedCouponCode = couponValidation.data.code ?? input.couponCode.trim().toUpperCase();
+
+      // Non-blocking increment of coupon times_used
+      const supabaseAdmin = createAdminClient();
+      supabaseAdmin
+        .from("event_coupons")
+        .select("id, times_used")
+        .ilike("code", appliedCouponCode ?? "")
+        .maybeSingle()
+        .then(({ data: cRow }) => {
+          if (cRow) {
+            supabaseAdmin
+              .from("event_coupons")
+              .update({
+                times_used: (cRow.times_used ?? 0) + 1,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", cRow.id)
+              .then();
+          }
+        });
+    }
+  }
+
+  const totalCents = Math.max(0, subtotalCents - discountAmountCents);
 
   const supabase = createAdminClient();
 
@@ -136,6 +212,10 @@ export async function processTicketOrderAction(
         purchaser_email: input.purchaserEmail,
         purchaser_phone: input.purchaserPhone || null,
         ticket_quantity: input.quantity,
+        student_quantity: studentQuantity,
+        child_quantity: childQuantity,
+        coupon_code: appliedCouponCode,
+        discount_amount_cents: discountAmountCents,
         unit_price_cents: selectedEvent.advancePriceCents,
         total_amount_cents: totalCents,
         status: "confirmed",
@@ -160,6 +240,10 @@ export async function processTicketOrderAction(
       eventTime: selectedEvent.time,
       eventLocation: selectedEvent.location,
       ticketQuantity: input.quantity,
+      studentQuantity,
+      childQuantity,
+      couponCode: appliedCouponCode,
+      discountAmountCents,
       unitPriceCents: selectedEvent.advancePriceCents,
       totalCents,
       purchaserName: input.purchaserName,
@@ -169,7 +253,7 @@ export async function processTicketOrderAction(
       notes: input.notes || null,
       createdAt: insertedOrder.created_at,
       checkInInstructions:
-        "SIMULATED ORDER ONLY (No Payment Collected). Please bring this simulated confirmation receipt to the Tour Check-In Table at Saugatuck City Hall on the morning of the event.",
+        "SIMULATED ORDER ONLY (No Payment Collected). Please bring this confirmation pass or mobile QR code to the Tour Check-In Table on the morning of the event.",
     };
 
     safeRevalidatePath("/admin/tickets");
@@ -191,6 +275,10 @@ export async function processTicketOrderAction(
       purchaser_email: input.purchaserEmail,
       purchaser_phone: input.purchaserPhone || null,
       ticket_quantity: input.quantity,
+      student_quantity: studentQuantity,
+      child_quantity: childQuantity,
+      coupon_code: appliedCouponCode,
+      discount_amount_cents: discountAmountCents,
       unit_price_cents: selectedEvent.advancePriceCents,
       total_amount_cents: totalCents,
       status: "pending",
@@ -204,7 +292,7 @@ export async function processTicketOrderAction(
       insertError.message?.toLowerCase().includes("ticket_orders") ||
       insertError.code === "PGRST204";
     const errorMessage = isMissingTable
-      ? "Ticket orders table is not yet provisioned on this database environment. Please apply the latest database migration (hosted_migrations_patch.sql) in your Supabase SQL Editor."
+      ? "Ticket orders table is not yet provisioned on this database environment. Please apply the latest database migration in your Supabase SQL Editor."
       : `Could not initialize ticket reservation: ${insertError.message}`;
     return {
       success: false,
@@ -217,8 +305,8 @@ export async function processTicketOrderAction(
       ticketOrderId: insertedOrder.id,
       orderReference,
       eventTitle: selectedEvent.title,
-      quantity: input.quantity,
-      unitPriceCents: selectedEvent.advancePriceCents,
+      quantity: 1,
+      unitPriceCents: totalCents,
       currency: "USD",
       returnPath: "/tickets-checkout",
       purchaserEmail: input.purchaserEmail,
@@ -240,6 +328,10 @@ export async function processTicketOrderAction(
       eventTime: selectedEvent.time,
       eventLocation: selectedEvent.location,
       ticketQuantity: input.quantity,
+      studentQuantity,
+      childQuantity,
+      couponCode: appliedCouponCode,
+      discountAmountCents,
       unitPriceCents: selectedEvent.advancePriceCents,
       totalCents,
       purchaserName: input.purchaserName,
@@ -386,6 +478,10 @@ export async function listAdminTicketOrdersAction(filters: TicketFilterInput = {
       purchaser_email,
       purchaser_phone,
       ticket_quantity,
+      student_quantity,
+      child_quantity,
+      coupon_code,
+      discount_amount_cents,
       unit_price_cents,
       total_amount_cents,
       status,
@@ -451,6 +547,10 @@ export async function listAdminTicketOrdersAction(filters: TicketFilterInput = {
       purchaserEmail: r.purchaser_email,
       purchaserPhone: r.purchaser_phone,
       ticketQuantity: r.ticket_quantity,
+      studentQuantity: r.student_quantity ?? 0,
+      childQuantity: r.child_quantity ?? 0,
+      couponCode: r.coupon_code ?? null,
+      discountAmountCents: r.discount_amount_cents ?? 0,
       unitPriceCents: r.unit_price_cents,
       totalAmountCents: r.total_amount_cents,
       status: r.status as TicketOrderListItem["status"],
@@ -696,4 +796,274 @@ export async function reconcileTicketCheckoutSessionAction(
       error: err instanceof Error ? err.message : "Failed to reconcile ticket session.",
     };
   }
+}
+
+/**
+ * Validate a coupon or promo code for ticket checkout.
+ * Safe for public checkout use.
+ */
+export async function validateCouponCodeAction(
+  code: string,
+  eventId?: string,
+  subtotalCents?: number,
+): Promise<ActionResult<ValidateCouponResult>> {
+  const cleanCode = code.trim().toUpperCase();
+  if (!cleanCode) {
+    return { success: false, error: "Please enter a coupon code." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: coupon, error } = await supabase
+      .from("event_coupons")
+      .select(
+        "id, code, description, discount_type, discount_value, event_id, valid_from, valid_until, max_uses, times_used, is_active",
+      )
+      .ilike("code", cleanCode)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (error || !coupon) {
+      return {
+        success: true,
+        data: { valid: false, message: "Invalid or inactive coupon code." },
+      };
+    }
+
+    const now = new Date();
+    if (coupon.valid_from && new Date(coupon.valid_from) > now) {
+      return {
+        success: true,
+        data: { valid: false, message: "This coupon code is not active yet." },
+      };
+    }
+
+    if (coupon.valid_until && new Date(coupon.valid_until) < now) {
+      return {
+        success: true,
+        data: { valid: false, message: "This coupon code has expired." },
+      };
+    }
+
+    if (coupon.max_uses !== null && coupon.times_used >= coupon.max_uses) {
+      return {
+        success: true,
+        data: { valid: false, message: "This coupon has reached its maximum redemptions." },
+      };
+    }
+
+    if (coupon.event_id && eventId && coupon.event_id !== eventId) {
+      return {
+        success: true,
+        data: { valid: false, message: "This coupon is not valid for the selected event." },
+      };
+    }
+
+    let calculatedDiscountCents = 0;
+    const baseAmount = subtotalCents ?? 0;
+    if (coupon.discount_type === "percentage") {
+      calculatedDiscountCents = Math.round((baseAmount * coupon.discount_value) / 100);
+    } else {
+      calculatedDiscountCents = Math.min(baseAmount, coupon.discount_value);
+    }
+
+    const discountLabel =
+      coupon.discount_type === "percentage"
+        ? `${coupon.discount_value}% off`
+        : `$${(coupon.discount_value / 100).toFixed(2)} off`;
+
+    return {
+      success: true,
+      data: {
+        valid: true,
+        code: coupon.code,
+        discountType: coupon.discount_type as "percentage" | "fixed_amount",
+        discountValue: coupon.discount_value,
+        calculatedDiscountCents,
+        message: coupon.description || `Applied ${discountLabel}!`,
+      },
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to validate coupon code.",
+    };
+  }
+}
+
+/**
+ * List all coupons for admin ticket configuration.
+ */
+export async function listAdminCouponsAction(): Promise<ActionResult<TicketCoupon[]>> {
+  await requireCapability(["events.manage", "dues.reconcile"]);
+  const supabase = await createClient();
+
+  const { data: rows, error } = await supabase
+    .from("event_coupons")
+    .select(
+      `
+      id,
+      code,
+      description,
+      discount_type,
+      discount_value,
+      event_id,
+      valid_from,
+      valid_until,
+      max_uses,
+      times_used,
+      is_active,
+      created_at,
+      events (
+        title
+      )
+    `,
+    )
+    .order("created_at", { ascending: false });
+
+  if (error || !rows) {
+    return { success: false, error: error?.message || "Failed to load coupons." };
+  }
+
+  const coupons: TicketCoupon[] = rows.map((r) => {
+    const event = r.events as { title?: string } | null;
+    return {
+      id: r.id,
+      code: r.code,
+      description: r.description,
+      discountType: r.discount_type as "percentage" | "fixed_amount",
+      discountValue: r.discount_value,
+      eventId: r.event_id,
+      eventTitle: event?.title || null,
+      validFrom: r.valid_from,
+      validUntil: r.valid_until,
+      maxUses: r.max_uses,
+      timesUsed: r.times_used,
+      isActive: r.is_active,
+      createdAt: r.created_at,
+    };
+  });
+
+  return { success: true, data: coupons };
+}
+
+/**
+ * Create a new coupon code for events.
+ */
+export async function createCouponAction(input: {
+  code: string;
+  description?: string;
+  discountType: "percentage" | "fixed_amount";
+  discountValue: number;
+  eventId?: string;
+  validFrom?: string;
+  validUntil?: string;
+  maxUses?: number;
+}): Promise<ActionResult<TicketCoupon>> {
+  const user = await requireCapability("events.manage");
+  const cleanCode = input.code.trim().toUpperCase();
+
+  if (!cleanCode || cleanCode.length < 3) {
+    return { success: false, error: "Coupon code must be at least 3 characters." };
+  }
+  if (input.discountValue <= 0) {
+    return { success: false, error: "Discount value must be greater than 0." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("event_coupons")
+    .insert({
+      code: cleanCode,
+      description: input.description?.trim() || null,
+      discount_type: input.discountType,
+      discount_value: input.discountValue,
+      event_id: input.eventId && input.eventId !== "all" ? input.eventId : null,
+      valid_from: input.validFrom ? new Date(input.validFrom).toISOString() : null,
+      valid_until: input.validUntil ? new Date(input.validUntil).toISOString() : null,
+      max_uses: input.maxUses ? Math.max(1, input.maxUses) : null,
+      is_active: true,
+    })
+    .select("id, code, created_at")
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: user.id,
+    action: "coupon.created",
+    entity_type: "event_coupon",
+    entity_id: data.id,
+    details: {
+      code: cleanCode,
+      discountType: input.discountType,
+      discountValue: input.discountValue,
+    },
+  });
+
+  safeRevalidatePath("/admin/tickets");
+  safeRevalidatePath("/tickets-checkout");
+
+  return {
+    success: true,
+    message: `Coupon "${cleanCode}" created successfully.`,
+  };
+}
+
+/**
+ * Toggle active status of a coupon.
+ */
+export async function toggleCouponActiveAction(
+  couponId: string,
+  isActive: boolean,
+): Promise<ActionResult> {
+  const user = await requireCapability("events.manage");
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("event_coupons")
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
+    .eq("id", couponId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: user.id,
+    action: isActive ? "coupon.activated" : "coupon.deactivated",
+    entity_type: "event_coupon",
+    entity_id: couponId,
+    details: { isActive },
+  });
+
+  safeRevalidatePath("/admin/tickets");
+  safeRevalidatePath("/tickets-checkout");
+  return { success: true };
+}
+
+/**
+ * Delete a coupon.
+ */
+export async function deleteCouponAction(couponId: string): Promise<ActionResult> {
+  const user = await requireCapability("events.manage");
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("event_coupons").delete().eq("id", couponId);
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await supabase.from("audit_events").insert({
+    actor_id: user.id,
+    action: "coupon.deleted",
+    entity_type: "event_coupon",
+    entity_id: couponId,
+  });
+
+  safeRevalidatePath("/admin/tickets");
+  safeRevalidatePath("/tickets-checkout");
+  return { success: true };
 }
