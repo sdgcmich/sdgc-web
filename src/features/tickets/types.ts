@@ -1,4 +1,4 @@
-export type TicketOrderStatus = "confirmed" | "checked_in" | "cancelled" | "refunded";
+export type TicketOrderStatus = "pending" | "confirmed" | "checked_in" | "cancelled" | "refunded";
 
 export interface TicketEvent {
   id: string;
@@ -41,6 +41,7 @@ export interface TicketOrder {
   checkedInBy?: string | null;
   createdAt: string;
   checkInInstructions: string;
+  checkoutUrl?: string;
 }
 
 export interface TicketOrderListItem {

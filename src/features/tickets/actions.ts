@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/features/auth/types";
 import { requireCapability } from "@/features/auth/authorization";
 import { isSimulationAllowed } from "@/features/payments/local-provider";
+import { stripePaymentProvider } from "@/features/payments/stripe-provider";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ticketCheckoutSchema } from "./validation";
@@ -80,11 +81,14 @@ export async function getTicketEvents(): Promise<TicketEvent[]> {
 export async function processTicketOrderAction(
   rawInput: TicketCheckoutInput,
 ): Promise<ActionResult<TicketOrder>> {
-  if (!isSimulationAllowed()) {
+  const isSimulation = isSimulationAllowed();
+  const stripeStatus = stripePaymentProvider.getConfigStatus();
+
+  if (!isSimulation && !stripeStatus.isConfigured) {
     return {
       success: false,
       error:
-        "Online ticket orders are currently in simulated preview mode. Ticket sales simulation is only allowed in local test environments with LOCAL_PAYMENTS_SIMULATION=true.",
+        "Online ticket checkout is currently unavailable. Please check back later or purchase tickets at the event gate.",
     };
   }
 
@@ -121,7 +125,63 @@ export async function processTicketOrderAction(
 
   const supabase = createAdminClient();
 
-  // Persist order directly into ticket_orders table
+  // If running in local simulation mode
+  if (isSimulation) {
+    const { data: insertedOrder, error: insertError } = await supabase
+      .from("ticket_orders")
+      .insert({
+        order_reference: orderReference,
+        event_id: selectedEvent.id,
+        purchaser_name: input.purchaserName,
+        purchaser_email: input.purchaserEmail,
+        purchaser_phone: input.purchaserPhone || null,
+        ticket_quantity: input.quantity,
+        unit_price_cents: selectedEvent.advancePriceCents,
+        total_amount_cents: totalCents,
+        status: "confirmed",
+        notes: input.notes || "Advance online ticket reservation (simulated)",
+      })
+      .select("id, order_reference, created_at")
+      .single();
+
+    if (insertError) {
+      return {
+        success: false,
+        error: `Could not save ticket reservation: ${insertError.message}`,
+      };
+    }
+
+    const order: TicketOrder = {
+      orderId: insertedOrder.id,
+      orderReference,
+      eventId: selectedEvent.id,
+      eventTitle: selectedEvent.title,
+      eventDate: selectedEvent.date,
+      eventTime: selectedEvent.time,
+      eventLocation: selectedEvent.location,
+      ticketQuantity: input.quantity,
+      unitPriceCents: selectedEvent.advancePriceCents,
+      totalCents,
+      purchaserName: input.purchaserName,
+      purchaserEmail: input.purchaserEmail,
+      purchaserPhone: input.purchaserPhone || null,
+      status: "confirmed",
+      notes: input.notes || null,
+      createdAt: insertedOrder.created_at,
+      checkInInstructions:
+        "SIMULATED ORDER ONLY (No Payment Collected). Please bring this simulated confirmation receipt to the Tour Check-In Table at Saugatuck City Hall on the morning of the event.",
+    };
+
+    safeRevalidatePath("/admin/tickets");
+    safeRevalidatePath("/tickets-checkout");
+
+    return {
+      success: true,
+      data: order,
+    };
+  }
+
+  // Real or Sandbox Stripe Checkout flow
   const { data: insertedOrder, error: insertError } = await supabase
     .from("ticket_orders")
     .insert({
@@ -133,8 +193,8 @@ export async function processTicketOrderAction(
       ticket_quantity: input.quantity,
       unit_price_cents: selectedEvent.advancePriceCents,
       total_amount_cents: totalCents,
-      status: "confirmed",
-      notes: input.notes || "Advance online ticket reservation",
+      status: "pending",
+      notes: input.notes || "Pending Stripe Checkout payment",
     })
     .select("id, order_reference, created_at")
     .single();
@@ -142,38 +202,163 @@ export async function processTicketOrderAction(
   if (insertError) {
     return {
       success: false,
-      error: `Could not save ticket reservation: ${insertError.message}`,
+      error: `Could not initialize ticket reservation: ${insertError.message}`,
     };
   }
 
-  const order: TicketOrder = {
-    orderId: insertedOrder.id,
-    orderReference,
-    eventId: selectedEvent.id,
-    eventTitle: selectedEvent.title,
-    eventDate: selectedEvent.date,
-    eventTime: selectedEvent.time,
-    eventLocation: selectedEvent.location,
-    ticketQuantity: input.quantity,
-    unitPriceCents: selectedEvent.advancePriceCents,
-    totalCents,
-    purchaserName: input.purchaserName,
-    purchaserEmail: input.purchaserEmail,
-    purchaserPhone: input.purchaserPhone || null,
-    status: "confirmed",
-    notes: input.notes || null,
-    createdAt: insertedOrder.created_at,
-    checkInInstructions:
-      "SIMULATED ORDER ONLY (No Payment Collected). Please bring this simulated confirmation receipt to the Tour Check-In Table at Saugatuck City Hall on the morning of the event.",
-  };
+  try {
+    const checkout = await stripePaymentProvider.createTicketCheckoutSession({
+      ticketOrderId: insertedOrder.id,
+      orderReference,
+      eventTitle: selectedEvent.title,
+      quantity: input.quantity,
+      unitPriceCents: selectedEvent.advancePriceCents,
+      currency: "USD",
+      returnPath: "/tickets-checkout",
+      purchaserEmail: input.purchaserEmail,
+      purchaserName: input.purchaserName,
+      eventId: selectedEvent.id,
+    });
 
-  safeRevalidatePath("/admin/tickets");
-  safeRevalidatePath("/tickets-checkout");
+    await supabase
+      .from("ticket_orders")
+      .update({ stripe_session_id: checkout.providerReference })
+      .eq("id", insertedOrder.id);
 
-  return {
-    success: true,
-    data: order,
-  };
+    const order: TicketOrder = {
+      orderId: insertedOrder.id,
+      orderReference,
+      eventId: selectedEvent.id,
+      eventTitle: selectedEvent.title,
+      eventDate: selectedEvent.date,
+      eventTime: selectedEvent.time,
+      eventLocation: selectedEvent.location,
+      ticketQuantity: input.quantity,
+      unitPriceCents: selectedEvent.advancePriceCents,
+      totalCents,
+      purchaserName: input.purchaserName,
+      purchaserEmail: input.purchaserEmail,
+      purchaserPhone: input.purchaserPhone || null,
+      status: "pending",
+      notes: input.notes || null,
+      createdAt: insertedOrder.created_at,
+      checkInInstructions:
+        "Please present your official digital pass or printed confirmation receipt at the Tour Check-In Table on the morning of the event.",
+      checkoutUrl: checkout.checkoutUrl,
+    };
+
+    safeRevalidatePath("/admin/tickets");
+    safeRevalidatePath("/tickets-checkout");
+
+    return {
+      success: true,
+      data: order,
+    };
+  } catch (err: unknown) {
+    // Clean up or mark failed
+    await supabase.from("ticket_orders").delete().eq("id", insertedOrder.id);
+    return {
+      success: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "Failed to create Stripe checkout session for tickets.",
+    };
+  }
+}
+
+export async function getTicketOrderByReferenceAction(
+  orderReference: string,
+): Promise<ActionResult<TicketOrder>> {
+  try {
+    const supabase = createAdminClient();
+    const { data: orderRow, error: orderError } = await supabase
+      .from("ticket_orders")
+      .select(
+        "id, order_reference, event_id, purchaser_name, purchaser_email, purchaser_phone, ticket_quantity, unit_price_cents, total_amount_cents, status, notes, created_at, checked_in_at, checked_in_by, events(id, title, starts_at, ends_at, description, venues(name, address, city, state, postal_code))",
+      )
+      .eq("order_reference", orderReference.trim().toUpperCase())
+      .maybeSingle();
+
+    if (orderError || !orderRow) {
+      return {
+        success: false,
+        error: `Ticket order not found with reference ${orderReference}`,
+      };
+    }
+
+    const event = orderRow.events as {
+      id: string;
+      title: string;
+      starts_at: string;
+      ends_at: string;
+      description: string;
+      venues?: {
+        name: string;
+        address?: string;
+        city: string;
+        state: string;
+        postal_code?: string;
+      } | null;
+    } | null;
+
+    let eventDate = "July 11, 2026";
+    let eventTime = "10:00 AM – 4:00 PM";
+    let eventLocation = "Saugatuck City Hall, 102 Butler St, Saugatuck, MI 49453";
+
+    if (event?.starts_at) {
+      const d = new Date(event.starts_at);
+      eventDate = d.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "America/Detroit",
+      });
+      eventTime = d.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "America/Detroit",
+      });
+    }
+
+    if (event?.venues) {
+      eventLocation = `${event.venues.name}, ${event.venues.city}, ${event.venues.state}`;
+    }
+
+    const order: TicketOrder = {
+      orderId: orderRow.id,
+      orderReference: orderRow.order_reference,
+      eventId: orderRow.event_id || "",
+      eventTitle: event?.title || "47th Annual Garden Walk Fundraiser",
+      eventDate,
+      eventTime,
+      eventLocation,
+      ticketQuantity: orderRow.ticket_quantity,
+      unitPriceCents: orderRow.unit_price_cents,
+      totalCents: orderRow.total_amount_cents,
+      purchaserName: orderRow.purchaser_name,
+      purchaserEmail: orderRow.purchaser_email,
+      purchaserPhone: orderRow.purchaser_phone || null,
+      status: orderRow.status as TicketOrder["status"],
+      notes: orderRow.notes,
+      checkedInAt: orderRow.checked_in_at,
+      checkedInBy: orderRow.checked_in_by,
+      createdAt: orderRow.created_at,
+      checkInInstructions:
+        "Please present your official digital pass or printed confirmation receipt at the Tour Check-In Table on the morning of the event.",
+    };
+
+    return {
+      success: true,
+      data: order,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to load ticket order.",
+    };
+  }
 }
 
 export async function listAdminTicketOrdersAction(filters: TicketFilterInput = {}): Promise<{

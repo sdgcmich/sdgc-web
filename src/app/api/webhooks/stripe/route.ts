@@ -64,6 +64,53 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Check if this checkout session is for an event ticket order
+      if (sessionObj?.metadata?.type === "ticket_order" || sessionObj?.metadata?.orderReference) {
+        const orderRef = sessionObj.metadata.orderReference;
+        const ticketOrderId = sessionObj.metadata.ticketOrderId;
+
+        const { data: ticketOrder } = await supabase
+          .from("ticket_orders")
+          .select("id, order_reference, status, total_amount_cents")
+          .or(
+            `id.eq.${ticketOrderId || "00000000-0000-0000-0000-000000000000"},order_reference.eq.${orderRef}`,
+          )
+          .maybeSingle();
+
+        if (ticketOrder) {
+          if (ticketOrder.status !== "confirmed") {
+            await supabase
+              .from("ticket_orders")
+              .update({
+                status: "confirmed",
+                stripe_session_id: sessionObj.id,
+                stripe_payment_intent_id: sessionObj.payment_intent || null,
+                notes: `Paid via Stripe Checkout (${sessionObj.id})`,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", ticketOrder.id);
+
+            await supabase.from("audit_events").insert({
+              action: "ticket_order.confirmed",
+              entity_type: "ticket_order",
+              entity_id: ticketOrder.id,
+              details: {
+                event_id: event.id,
+                order_reference: ticketOrder.order_reference,
+                stripe_session_id: sessionObj.id,
+                amount_total: sessionObj.amount_total,
+              },
+            });
+          }
+
+          return NextResponse.json({
+            received: true,
+            ticket_order_confirmed: true,
+            order_reference: ticketOrder.order_reference,
+          });
+        }
+      }
+
       const paymentId = sessionObj?.client_reference_id || sessionObj?.metadata?.paymentId;
 
       if (!paymentId) {

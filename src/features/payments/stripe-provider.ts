@@ -3,6 +3,19 @@ import "server-only";
 import crypto from "node:crypto";
 import type { CreateCheckoutInput, CheckoutResult } from "./types";
 
+export interface CreateTicketCheckoutInput {
+  ticketOrderId: string;
+  orderReference: string;
+  eventTitle: string;
+  quantity: number;
+  unitPriceCents: number;
+  currency?: string;
+  returnPath: string;
+  purchaserEmail: string;
+  purchaserName: string;
+  eventId?: string;
+}
+
 export interface StripeConfigStatus {
   isConfigured: boolean;
   isTestMode: boolean;
@@ -121,6 +134,103 @@ export class StripePaymentProvider {
       const message =
         errorData?.error?.message || `Stripe API error: ${response.status} ${response.statusText}`;
       throw new Error(`Stripe Checkout creation failed: ${message}`);
+    }
+
+    const sessionData = (await response.json()) as { id: string; url: string };
+    return {
+      checkoutUrl: sessionData.url,
+      providerReference: sessionData.id,
+    };
+  }
+
+  /**
+   * Creates a Stripe Checkout session for event ticket orders (e.g. Annual Garden Walk).
+   * Strict constraints:
+   * - Unit price from server-verified event record.
+   * - Metadata includes type: ticket_order and orderReference.
+   * - Never creates or updates memberships (strict bylaw separation).
+   */
+  async createTicketCheckoutSession(input: CreateTicketCheckoutInput): Promise<CheckoutResult> {
+    const status = this.getConfigStatus();
+
+    // Guard: Prevent live charges during testing
+    if (process.env.NODE_ENV !== "production" && !status.isTestMode && status.isConfigured) {
+      throw new Error(
+        "CRITICAL SECURITY REJECTION: Live Stripe keys detected in development/test environment. Only sandbox/test keys (sk_test_*, rkcs_test_*) are permitted.",
+      );
+    }
+
+    if (!status.isConfigured) {
+      const fallbackRef = `cs_test_${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`;
+      return {
+        checkoutUrl: `${input.returnPath}?session_id=${fallbackRef}&order_ref=${input.orderReference}&simulated=true`,
+        providerReference: fallbackRef,
+      };
+    }
+
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    const currency = (input.currency || "USD").toLowerCase();
+
+    const params = new URLSearchParams();
+    params.append("mode", "payment");
+    if (input.purchaserEmail) {
+      params.append("customer_email", input.purchaserEmail);
+    }
+
+    params.append("metadata[type]", "ticket_order");
+    params.append("metadata[ticketOrderId]", input.ticketOrderId);
+    params.append("metadata[orderReference]", input.orderReference);
+    params.append("metadata[purchaserEmail]", input.purchaserEmail);
+    params.append("metadata[purchaserName]", input.purchaserName);
+    params.append("metadata[quantity]", String(input.quantity));
+    if (input.eventId) {
+      params.append("metadata[eventId]", input.eventId);
+    }
+
+    params.append("line_items[0][price_data][currency]", currency);
+    params.append("line_items[0][price_data][unit_amount]", String(input.unitPriceCents));
+    params.append(
+      "line_items[0][price_data][product_data][name]",
+      `${input.eventTitle} — Advance Admission Ticket`,
+    );
+    params.append(
+      "line_items[0][price_data][product_data][description]",
+      `Advance admission pass for ${input.quantity} person(s). Non-refundable event admission.`,
+    );
+    params.append("line_items[0][quantity]", String(input.quantity));
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
+    const returnUrl =
+      input.returnPath.startsWith("http://") || input.returnPath.startsWith("https://")
+        ? input.returnPath
+        : `${siteUrl}${input.returnPath.startsWith("/") ? "" : "/"}${input.returnPath}`;
+    const separator = returnUrl.includes("?") ? "&" : "?";
+
+    params.append(
+      "success_url",
+      `${returnUrl}${separator}session_id={CHECKOUT_SESSION_ID}&order_ref=${input.orderReference}&payment_status=success`,
+    );
+    params.append(
+      "cancel_url",
+      `${returnUrl}${separator}order_ref=${input.orderReference}&payment_status=cancelled`,
+    );
+
+    const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({}))) as {
+        error?: { message?: string };
+      };
+      const message =
+        errorData?.error?.message || `Stripe API error: ${response.status} ${response.statusText}`;
+      throw new Error(`Stripe Ticket Checkout creation failed: ${message}`);
     }
 
     const sessionData = (await response.json()) as { id: string; url: string };
