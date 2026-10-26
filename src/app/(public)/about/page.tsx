@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MarkdownContent } from "@/components/ui/markdown-content";
 import { getAboutPageContent } from "@/features/content/queries";
+import { serializeJsonLd } from "@/lib/jsonld";
 
 export const metadata = {
   title: "About Our Club",
@@ -17,8 +18,28 @@ export default async function AboutPage() {
     notFound();
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    name: about.title,
+    description: about.subtitle,
+    publisher: {
+      "@type": "Organization",
+      name: "Saugatuck-Douglas Garden Club",
+      url: "https://saugatuckdouglasgardenclub.org",
+      logo: "https://saugatuckdouglasgardenclub.org/images/brand/sdgc-logo.jpg",
+      foundingDate: "1928",
+      areaServed: "Saugatuck and Douglas, MI",
+    },
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 space-y-12">
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data is safely serialized
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <div className="space-y-4 text-center max-w-3xl mx-auto">
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary tracking-wide uppercase">
           {about.heroBadge || "Dedicated Since 1928"}

@@ -391,11 +391,11 @@ export function AdminContent({
         </div>
 
         {/* Tab Navigation Segmented Bar */}
-        <div className="inline-flex flex-wrap rounded-xl border border-border/60 bg-muted/40 p-1 text-xs font-semibold gap-1">
+        <div className="flex w-full sm:w-auto overflow-x-auto no-scrollbar rounded-xl border border-border/60 bg-muted/40 p-1 text-xs font-semibold gap-1 whitespace-nowrap">
           <button
             type="button"
             onClick={() => setActiveTab("pages")}
-            className={`rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
               activeTab === "pages"
                 ? "bg-card text-foreground shadow-2xs border border-border/40 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -406,7 +406,7 @@ export function AdminContent({
           <button
             type="button"
             onClick={() => setActiveTab("homepage")}
-            className={`rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
               activeTab === "homepage"
                 ? "bg-card text-foreground shadow-2xs border border-border/40 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -417,7 +417,7 @@ export function AdminContent({
           <button
             type="button"
             onClick={() => setActiveTab("about")}
-            className={`rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
               activeTab === "about"
                 ? "bg-card text-foreground shadow-2xs border border-border/40 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -428,7 +428,7 @@ export function AdminContent({
           <button
             type="button"
             onClick={() => setActiveTab("garden-walk")}
-            className={`rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
               activeTab === "garden-walk"
                 ? "bg-card text-foreground shadow-2xs border border-border/40 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -439,7 +439,7 @@ export function AdminContent({
           <button
             type="button"
             onClick={() => setActiveTab("join")}
-            className={`rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 transition-all cursor-pointer ${
               activeTab === "join"
                 ? "bg-card text-foreground shadow-2xs border border-border/40 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -514,6 +514,7 @@ export function AdminContent({
                       </Button>
                       <Link
                         href={p.slug === "home" ? "/" : (`/${p.slug}` as Route)}
+                        prefetch={false}
                         target="_blank"
                         className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors shadow-2xs"
                       >

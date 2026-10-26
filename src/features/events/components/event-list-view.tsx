@@ -215,11 +215,11 @@ export function EventListView({
                     <span>{event.venueName}</span>
                   </div>
 
-                  <div className="flex items-center space-x-3">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm">
                     <a
                       href={`/event/${event.slug}/ics`}
                       download={`${event.slug}.ics`}
-                      className="font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                      className="font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 shrink-0"
                       title="Add to calendar (.ics)"
                     >
                       <svg
@@ -241,14 +241,14 @@ export function EventListView({
                     {event.ticketUrl && (
                       <Link
                         href={event.ticketUrl as Route}
-                        className="font-medium text-primary hover:underline"
+                        className="font-medium text-primary hover:underline shrink-0"
                       >
                         Tickets &amp; RSVP &rarr;
                       </Link>
                     )}
                     <Link
                       href={`/event/${event.slug}`}
-                      className="font-medium text-primary hover:underline"
+                      className="font-medium text-primary hover:underline shrink-0"
                     >
                       View Details &rarr;
                     </Link>

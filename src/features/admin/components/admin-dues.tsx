@@ -408,7 +408,7 @@ export function AdminDues({
                 <th className="p-4">Amount</th>
                 <th className="p-4">Method</th>
                 <th className="p-4">Status</th>
-                <th className="p-4 text-right">Reconciliation & Check Info</th>
+                <th className="p-4 text-right">Reconciliation &amp; Check Info</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

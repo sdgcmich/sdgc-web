@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ContactForm } from "@/features/contact/components/contact-form";
 import { getSiteContactSettings } from "@/features/content/queries";
 import { Badge } from "@/components/ui/badge";
+import { serializeJsonLd } from "@/lib/jsonld";
 
 export const metadata = {
   title: "Contact Us",
@@ -12,8 +13,36 @@ export const metadata = {
 export default async function ContactPage() {
   const contact = await getSiteContactSettings();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    name: "Contact Saugatuck-Douglas Garden Club",
+    description:
+      "Get in touch with the Saugatuck Douglas Garden Club leadership regarding membership, Garden Walk tickets, community workbees, or historical archives.",
+    mainEntity: {
+      "@type": "Organization",
+      name: contact.name || "Saugatuck Douglas Garden Club",
+      email: contact.email || "info@saugatuckdouglasgardenclub.org",
+      telephone: contact.phone || undefined,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: contact.address || "PO Box 721",
+        addressLocality: contact.city || "Saugatuck",
+        addressRegion: contact.state || "MI",
+        postalCode: contact.postalCode || "49453",
+        addressCountry: "US",
+      },
+      url: "https://saugatuckdouglasgardenclub.org",
+    },
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 space-y-12">
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data is safely serialized
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       {/* Hero Header */}
       <div className="text-center space-y-3 max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary uppercase tracking-wide">

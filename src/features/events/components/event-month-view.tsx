@@ -99,11 +99,11 @@ export function EventMonthView({ events, initialYear, initialMonth, error }: Eve
   return (
     <div className="space-y-4">
       {/* Month Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 className="font-serif text-2xl font-bold text-foreground">
           {MONTH_NAMES[month - 1]} {year}
         </h2>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 self-start sm:self-auto">
           <button
             type="button"
             onClick={handlePrevMonth}
@@ -166,7 +166,10 @@ export function EventMonthView({ events, initialYear, initialMonth, error }: Eve
         {/* Weekday headers */}
         <div className="grid grid-cols-7 border-b border-border bg-muted/50 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground py-2">
           {WEEKDAYS.map((day) => (
-            <div key={day}>{day}</div>
+            <div key={day} className="truncate px-1">
+              <span className="hidden sm:inline">{day}</span>
+              <span className="sm:hidden">{day.slice(0, 1)}</span>
+            </div>
           ))}
         </div>
 
@@ -176,7 +179,7 @@ export function EventMonthView({ events, initialYear, initialMonth, error }: Eve
             week.map((cell) => (
               <div
                 key={cell.date}
-                className={`min-h-[90px] sm:min-h-[110px] p-1.5 sm:p-2 flex flex-col justify-between transition-colors ${
+                className={`min-h-[75px] sm:min-h-[110px] p-1 sm:p-2 flex flex-col justify-between transition-colors ${
                   cell.isCurrentMonth
                     ? "bg-card text-foreground"
                     : "bg-muted/30 text-muted-foreground/60"
@@ -191,9 +194,15 @@ export function EventMonthView({ events, initialYear, initialMonth, error }: Eve
                     {cell.dayNumber}
                   </span>
                   {cell.events.length > 0 && (
-                    <span className="hidden sm:inline-block text-[10px] font-bold text-primary">
-                      {cell.events.length} event{cell.events.length > 1 ? "s" : ""}
-                    </span>
+                    <>
+                      <span className="hidden sm:inline-block text-[10px] font-bold text-primary">
+                        {cell.events.length} event{cell.events.length > 1 ? "s" : ""}
+                      </span>
+                      <span
+                        className="sm:hidden h-1.5 w-1.5 rounded-full bg-primary shrink-0"
+                        title={`${cell.events.length} event(s)`}
+                      />
+                    </>
                   )}
                 </div>
 
@@ -202,10 +211,13 @@ export function EventMonthView({ events, initialYear, initialMonth, error }: Eve
                     <Link
                       key={e.id}
                       href={`/event/${e.slug}`}
-                      className="block truncate rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/20 transition-colors"
+                      className="block truncate rounded bg-primary/10 px-1 py-0.5 text-[10px] sm:text-[11px] font-medium text-primary hover:bg-primary/20 transition-colors"
                       title={`${e.title} (${formatEventTime(e.startsAt)})`}
                     >
-                      <span className="font-semibold">{formatEventTime(e.startsAt)}</span> {e.title}
+                      <span className="hidden sm:inline font-semibold">
+                        {formatEventTime(e.startsAt)}{" "}
+                      </span>
+                      <span className="truncate">{e.title}</span>
                     </Link>
                   ))}
                 </div>

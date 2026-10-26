@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireCapability } from "@/features/auth/authorization";
+import { resolveMediaUrl } from "@/lib/storage/media-url";
 import type {
   AdminMetrics,
   AdminMemberRecord,
@@ -241,7 +242,7 @@ export async function getAdminEvents(): Promise<AdminEventRecord[]> {
     venueName: e.venues?.name ?? undefined,
     venueId: e.venue_id ?? undefined,
     description: e.description,
-    featuredImage: e.featured_image ?? undefined,
+    featuredImage: e.featured_image ? resolveMediaUrl(e.featured_image) : undefined,
   }));
 }
 

@@ -155,7 +155,7 @@ export function MemberDirectory({ initialMembers }: MemberDirectoryProps) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-border/60 text-xs">
           <label className="flex items-center gap-2 cursor-pointer select-none text-muted-foreground hover:text-foreground">
             <input
               type="checkbox"
@@ -205,13 +205,13 @@ export function MemberDirectory({ initialMembers }: MemberDirectoryProps) {
                 className="rounded-2xl border border-border/60 bg-card p-6 shadow-xs hover:border-primary/40 hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4"
               >
                 <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className="h-12 w-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-serif text-base font-bold text-primary shrink-0">
                         {initials}
                       </div>
-                      <div>
-                        <h3 className="font-serif text-lg font-bold text-foreground leading-snug">
+                      <div className="min-w-0">
+                        <h3 className="font-serif text-lg font-bold text-foreground leading-snug truncate">
                           {member.fullName}
                         </h3>
                         <p className="text-xs text-muted-foreground">Club Member</p>
@@ -219,7 +219,10 @@ export function MemberDirectory({ initialMembers }: MemberDirectoryProps) {
                     </div>
 
                     {member.isMasterGardener && (
-                      <Badge variant="success" className="shrink-0 text-[10px]">
+                      <Badge
+                        variant="success"
+                        className="self-start sm:self-auto shrink-0 text-[10px]"
+                      >
                         Master Gardener
                       </Badge>
                     )}

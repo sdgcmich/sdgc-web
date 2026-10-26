@@ -5,6 +5,7 @@ import { formatEventDateTime } from "@/features/events/calendar";
 import { getGardenWalkPageContent } from "@/features/content/queries";
 import { resolveMediaUrl } from "@/lib/storage/media-url";
 import { GardenWalkGallery } from "@/features/media/components/garden-walk-gallery";
+import { serializeJsonLd } from "@/lib/jsonld";
 
 export const metadata = {
   title: "Annual Garden Walk | Saugatuck Douglas Garden Club",
@@ -77,8 +78,48 @@ export default async function GardenWalkPage() {
   const eventSlug = event?.slug || "2027-47th-annual-garden-walk";
   const ticketUrl = (event?.ticketUrl || "/tickets-checkout") as Route;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: eventTitle,
+    description: walk.subtitle,
+    startDate: event?.startsAt || "2027-07-10T10:00:00-04:00",
+    endDate: event?.endsAt || "2027-07-10T16:00:00-04:00",
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: {
+      "@type": "Place",
+      name: event?.venueName || "Saugatuck and Douglas Private Gardens",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Saugatuck",
+        addressRegion: "MI",
+        postalCode: "49453",
+        addressCountry: "US",
+      },
+    },
+    organizer: {
+      "@type": "Organization",
+      name: "Saugatuck-Douglas Garden Club",
+      url: "https://saugatuckdouglasgardenclub.org",
+    },
+    offers: {
+      "@type": "Offer",
+      url: "https://saugatuckdouglasgardenclub.org/tickets-checkout",
+      price: "20.00",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      validFrom: "2026-01-01T00:00:00-04:00",
+    },
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 space-y-16">
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data is safely serialized
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       {/* Hero Header */}
       <div className="space-y-4 text-center max-w-3xl mx-auto">
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1 text-xs font-bold text-primary tracking-wide uppercase">

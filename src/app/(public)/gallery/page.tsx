@@ -11,6 +11,21 @@ export const metadata: Metadata = {
     description:
       "Explore photo albums of Saugatuck Douglas Garden Club community beautification projects, civic plantings, workshops, and annual Garden Walks.",
     type: "website",
+    images: [
+      {
+        url: "/images/brand/sdgc-logo.jpg",
+        width: 800,
+        height: 800,
+        alt: "Saugatuck Douglas Garden Club Photo Gallery",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Photo Gallery Archive | Saugatuck-Douglas Garden Club",
+    description:
+      "Explore photo albums of Saugatuck Douglas Garden Club community beautification projects, civic plantings, workshops, and annual Garden Walks.",
+    images: ["/images/brand/sdgc-logo.jpg"],
   },
 };
 

@@ -29,7 +29,13 @@ export function resolveMediaUrl(path: string | null | undefined): string {
     return assetMap[withImagesPrefix];
   }
 
-  // Fallback to Cloudinary dynamic URL construction
+  // If the image is a local asset under /images/ that wasn't in the Cloudinary manifest,
+  // serve it directly from /public instead of generating a 404 remote Cloudinary URL.
+  if (normalizedPath.startsWith("/images/")) {
+    return normalizedPath;
+  }
+
+  // Fallback to Cloudinary dynamic URL construction for other paths
   const isCloudinary =
     process.env.STORAGE_PROVIDER === "cloudinary" ||
     process.env.NEXT_PUBLIC_STORAGE_PROVIDER === "cloudinary" ||

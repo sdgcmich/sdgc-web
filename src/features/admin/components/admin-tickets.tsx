@@ -383,10 +383,10 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
         </div>
       </div>
 
-      {/* Ticket Orders Table */}
+      {/* Ticket Orders Card/Table Container */}
       <div className="rounded-3xl border border-border bg-card overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left text-xs border-collapse min-w-[720px]">
             <thead>
               <tr className="border-b border-border/80 bg-muted/30 text-muted-foreground uppercase tracking-wider font-semibold">
                 <th className="px-5 py-3.5">Order Ref</th>
@@ -418,7 +418,7 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
                   return (
                     <tr key={order.id} className="hover:bg-muted/20 transition-colors group">
                       {/* Order Reference */}
-                      <td className="px-5 py-4 font-mono font-bold text-foreground">
+                      <td className="px-5 py-4 font-mono font-bold text-foreground whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => setSelectedOrder(order)}
@@ -448,19 +448,19 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
                       </td>
 
                       {/* Ticket Count */}
-                      <td className="px-5 py-4 font-medium text-foreground">
+                      <td className="px-5 py-4 font-medium text-foreground whitespace-nowrap">
                         <span className="inline-block bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-bold">
                           {order.ticketQuantity} pass{order.ticketQuantity > 1 ? "es" : ""}
                         </span>
                       </td>
 
                       {/* Total Amount */}
-                      <td className="px-5 py-4 font-semibold text-foreground">
+                      <td className="px-5 py-4 font-semibold text-foreground whitespace-nowrap">
                         ${(order.totalAmountCents / 100).toFixed(2)}
                       </td>
 
                       {/* Status */}
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-4 whitespace-nowrap">
                         {isCheckedIn ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 font-bold text-[11px]">
                             <svg
@@ -521,6 +521,7 @@ export function AdminTickets({ initialOrders, initialStats, initialEvents }: Adm
                             onClick={() => handleCancelOrder(order)}
                             className="text-muted-foreground hover:text-destructive text-xs transition-colors p-1"
                             title="Cancel Order"
+                            aria-label={`Cancel order ${order.orderReference}`}
                           >
                             &times;
                           </button>
