@@ -169,16 +169,26 @@ export async function POST(request: NextRequest) {
 
     case "payment_intent.payment_failed": {
       const paymentIntentId = sessionObj?.id;
-      if (paymentIntentId) {
-        const { error: failError } = await supabase
+      const paymentId = sessionObj?.metadata?.paymentId || sessionObj?.client_reference_id;
+      if (paymentIntentId || paymentId) {
+        let query = supabase
           .from("payments")
           .update({
             status: "failed",
             provider_event_id: event.id,
             updated_at: new Date().toISOString(),
           })
-          .eq("provider_transaction_id", paymentIntentId)
           .eq("status", "pending");
+
+        if (paymentId) {
+          query = query.eq("id", paymentId);
+        } else if (paymentIntentId) {
+          query = query.or(
+            `provider_transaction_id.eq.${paymentIntentId},provider_session_id.eq.${paymentIntentId}`,
+          );
+        }
+
+        const { error: failError } = await query;
 
         if (failError) {
           return NextResponse.json(
@@ -186,6 +196,19 @@ export async function POST(request: NextRequest) {
             { status: 500 },
           );
         }
+
+        // Audit log for payment failure
+        await supabase.from("audit_events").insert({
+          action: "payment.failed",
+          entity_type: "payment",
+          entity_id: paymentId || paymentIntentId || "unknown",
+          details: {
+            event_id: event.id,
+            provider: "stripe",
+            provider_transaction_id: paymentIntentId,
+            reason: sessionObj?.metadata?.failure_reason || "payment_intent_failed",
+          },
+        });
       }
       break;
     }
@@ -193,16 +216,24 @@ export async function POST(request: NextRequest) {
     case "charge.refunded": {
       const chargeId = sessionObj?.id;
       const txId = sessionObj?.payment_intent || chargeId;
-      if (txId) {
-        const { error: refundError } = await supabase
+      const paymentId = sessionObj?.metadata?.paymentId;
+      if (txId || paymentId) {
+        let query = supabase
           .from("payments")
           .update({
             status: "refunded",
             provider_event_id: event.id,
             updated_at: new Date().toISOString(),
           })
-          .or(`provider_transaction_id.eq.${txId},provider_session_id.eq.${txId}`)
           .eq("status", "confirmed");
+
+        if (paymentId) {
+          query = query.eq("id", paymentId);
+        } else if (txId) {
+          query = query.or(`provider_transaction_id.eq.${txId},provider_session_id.eq.${txId}`);
+        }
+
+        const { error: refundError } = await query;
 
         if (refundError) {
           return NextResponse.json(
@@ -210,6 +241,18 @@ export async function POST(request: NextRequest) {
             { status: 500 },
           );
         }
+
+        // Audit log for payment refund
+        await supabase.from("audit_events").insert({
+          action: "payment.refunded",
+          entity_type: "payment",
+          entity_id: paymentId || txId || "unknown",
+          details: {
+            event_id: event.id,
+            provider: "stripe",
+            provider_transaction_id: txId,
+          },
+        });
       }
       break;
     }

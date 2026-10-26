@@ -17,7 +17,11 @@ export class StripePaymentProvider {
     const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
-    const isTestMode = secretKey.startsWith("sk_test_") || publishableKey.startsWith("pk_test_");
+    const isTestMode =
+      secretKey.startsWith("sk_test_") ||
+      secretKey.startsWith("rkcs_test_") ||
+      secretKey.startsWith("rk_test_") ||
+      publishableKey.startsWith("pk_test_");
     const isConfigured = Boolean(secretKey && publishableKey);
 
     return {
@@ -30,7 +34,7 @@ export class StripePaymentProvider {
   }
 
   /**
-   * Creates a sandbox Stripe Checkout session contract.
+   * Creates a sandbox/production Stripe Checkout session.
    * STRICT SECURITY CONSTRAINTS:
    * - Authoritative pricing: Amount is passed from server-verified database terms, never from client requests.
    * - Test mode only: Fails closed if live keys are detected during local development or testing.
@@ -48,7 +52,7 @@ export class StripePaymentProvider {
     // Guard: Prevent live charges during testing
     if (process.env.NODE_ENV !== "production" && !status.isTestMode && status.isConfigured) {
       throw new Error(
-        "CRITICAL SECURITY REJECTION: Live Stripe keys detected in development/test environment. Only sandbox/test keys (sk_test_*) are permitted.",
+        "CRITICAL SECURITY REJECTION: Live Stripe keys detected in development/test environment. Only sandbox/test keys (sk_test_*, rkcs_test_*) are permitted.",
       );
     }
 
@@ -61,22 +65,79 @@ export class StripePaymentProvider {
       };
     }
 
-    const sessionRef = `cs_test_${crypto.randomBytes(12).toString("hex")}`;
-    // Local simulation contract: returns visibly simulated path rather than fake checkout.stripe.com
-    const checkoutUrl = `${input.returnPath}?session_id=${sessionRef}&provider=stripe_simulated`;
+    const secretKey = process.env.STRIPE_SECRET_KEY || "";
+    const params = new URLSearchParams();
+    params.append("mode", "payment");
+    params.append("client_reference_id", input.paymentId);
+    if (input.customerEmail) {
+      params.append("customer_email", input.customerEmail);
+    }
+    params.append("metadata[paymentId]", input.paymentId);
+    if (input.membershipId) {
+      params.append("metadata[membershipId]", input.membershipId);
+    }
+    params.append("metadata[userId]", input.userId);
+    params.append("metadata[termYear]", String(input.termYear));
 
+    params.append("line_items[0][price_data][currency]", input.currency.toLowerCase());
+    params.append("line_items[0][price_data][unit_amount]", String(input.amountCents));
+    params.append(
+      "line_items[0][price_data][product_data][name]",
+      `Saugatuck Douglas Garden Club — ${input.termYear} Annual Membership Dues`,
+    );
+    params.append(
+      "line_items[0][price_data][product_data][description]",
+      `Annual membership dues for the ${input.termYear} calendar season (Jan 1 – Dec 31). Non-recurring.`,
+    );
+    params.append("line_items[0][quantity]", "1");
+
+    const returnUrl = input.returnPath;
+    const successSeparator = returnUrl.includes("?") ? "&" : "?";
+    const cancelSeparator = returnUrl.includes("?") ? "&" : "?";
+
+    params.append(
+      "success_url",
+      `${returnUrl}${successSeparator}session_id={CHECKOUT_SESSION_ID}&payment_status=success`,
+    );
+    params.append("cancel_url", `${returnUrl}${cancelSeparator}payment_status=cancelled`);
+
+    const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({}))) as {
+        error?: { message?: string };
+      };
+      const message =
+        errorData?.error?.message || `Stripe API error: ${response.status} ${response.statusText}`;
+      throw new Error(`Stripe Checkout creation failed: ${message}`);
+    }
+
+    const sessionData = (await response.json()) as { id: string; url: string };
     return {
-      checkoutUrl,
-      providerReference: sessionRef,
+      checkoutUrl: sessionData.url,
+      providerReference: sessionData.id,
     };
   }
 
   /**
    * Validates Stripe webhook signatures.
-   * In sandbox testing, verifies HMAC-SHA256 signature when secret is available.
+   * Verifies HMAC-SHA256 signature using STRIPE_WEBHOOK_SECRET.
+   * Enforces timestamp tolerance (default: 300 seconds) against replay attacks.
+   * Supports multiple v1 signatures during secret rotation.
    * Strictly fails closed if STRIPE_WEBHOOK_SECRET is not configured or signature is invalid.
    */
-  verifyWebhookSignature(payload: string, signatureHeader: string | null): boolean {
+  verifyWebhookSignature(
+    payload: string,
+    signatureHeader: string | null,
+    toleranceSeconds: number = 300,
+  ): boolean {
     if (!signatureHeader?.includes("t=") || !signatureHeader.includes("v1=")) {
       return false;
     }
@@ -88,15 +149,23 @@ export class StripePaymentProvider {
     }
 
     try {
-      // Extract timestamp and signature components (t=...,v1=...)
       const parts = signatureHeader.split(",");
       const timestampPart = parts.find((p) => p.startsWith("t="));
-      const sigPart = parts.find((p) => p.startsWith("v1="));
+      const sigParts = parts.filter((p) => p.startsWith("v1="));
 
-      if (!timestampPart || !sigPart) return false;
+      if (!timestampPart || sigParts.length === 0) return false;
 
       const timestamp = timestampPart.slice(2);
-      const expectedSig = sigPart.slice(3);
+      const timestampNum = parseInt(timestamp, 10);
+      if (Number.isNaN(timestampNum)) return false;
+
+      // Timestamp tolerance check against replay attacks (skip if toleranceSeconds <= 0)
+      if (toleranceSeconds > 0) {
+        const now = Math.floor(Date.now() / 1000);
+        if (Math.abs(now - timestampNum) > toleranceSeconds) {
+          return false;
+        }
+      }
 
       const signedPayload = `${timestamp}.${payload}`;
       const computedSig = crypto
@@ -104,13 +173,31 @@ export class StripePaymentProvider {
         .update(signedPayload, "utf8")
         .digest("hex");
 
-      return crypto.timingSafeEqual(
-        Buffer.from(computedSig, "hex"),
-        Buffer.from(expectedSig, "hex"),
-      );
+      const computedBuffer = Buffer.from(computedSig, "hex");
+
+      return sigParts.some((sigPart) => {
+        const expectedSig = sigPart.slice(3);
+        try {
+          const expectedBuffer = Buffer.from(expectedSig, "hex");
+          if (computedBuffer.length !== expectedBuffer.length) return false;
+          return crypto.timingSafeEqual(computedBuffer, expectedBuffer);
+        } catch {
+          return false;
+        }
+      });
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Helper utility to generate valid Stripe webhook signatures for testing and simulation.
+   */
+  generateWebhookSignature(payload: string, secret: string, timestamp?: number): string {
+    const ts = timestamp ?? Math.floor(Date.now() / 1000);
+    const signedPayload = `${ts}.${payload}`;
+    const sig = crypto.createHmac("sha256", secret).update(signedPayload, "utf8").digest("hex");
+    return `t=${ts},v1=${sig}`;
   }
 }
 
