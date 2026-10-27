@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 export interface ContactNotificationPayload {
   messageId: string;
@@ -16,7 +16,7 @@ export interface ContactNotificationPayload {
 
 export interface NotificationDeliveryResult {
   success: boolean;
-  deliveryMethod: "local_capture" | "simulated" | "deduplicated" | "failed";
+  deliveryMethod: "local_capture" | "simulated" | "deduplicated" | "failed" | "resend";
   deduplicationKey: string;
   recipient: string;
   subject: string;
@@ -32,7 +32,8 @@ export function clearProcessedNotifications() {
 /**
  * Dispatches staff notification for new contact submissions.
  * In accordance with project instructions and Work Package R6 / V11-10:
- * - Delivers to local capture (Mailpit) in development/testing.
+ * - If RESEND_API_KEY is configured, delivers directly via Resend REST API to CONTACT_RECIPIENT_EMAIL.
+ * - Otherwise delivers to local capture (Mailpit) in development/testing.
  * - Enforces retry deduplication ONLY after successful acknowledgment.
  * - On capture failure, reports failure without marking as deduplicated, permitting bounded retry.
  */
@@ -40,6 +41,7 @@ export async function dispatchContactNotification(
   payload: ContactNotificationPayload,
 ): Promise<NotificationDeliveryResult> {
   const deduplicationKey = `contact_msg_${payload.messageId}`;
+  const defaultRecipient = process.env.CONTACT_RECIPIENT_EMAIL || "staff@sdgc.local";
 
   // 1. Check for deduplication
   if (processedNotifications.has(deduplicationKey)) {
@@ -47,7 +49,7 @@ export async function dispatchContactNotification(
       success: true,
       deliveryMethod: "deduplicated",
       deduplicationKey,
-      recipient: "staff@sdgc.local",
+      recipient: defaultRecipient,
       subject: `[Deduplicated] Inquiry from ${payload.senderName} (${payload.reference})`,
     };
   }
@@ -55,10 +57,59 @@ export async function dispatchContactNotification(
   const emailSubject = payload.subject
     ? `[${payload.category || "Inquiry"}] ${payload.subject} — ${payload.senderName} [${payload.reference}]`
     : `New Contact Inquiry from ${payload.senderName} [${payload.reference}]`;
-  const recipient = "staff@sdgc.local";
+  const recipient = defaultRecipient;
 
-  // 2. Local capture delivery
-  // In our local Docker environment, Mailpit provides local mail capture on port 54324
+  const emailText = `New Contact Submission:
+
+Reference: ${payload.reference}
+From: ${payload.senderName} <${payload.senderEmail}>
+Phone: ${payload.senderPhone || "None"}
+Sender Type: ${payload.senderType || "Not specified"}
+Category: ${payload.category || "General"}
+Subject: ${payload.subject || "No Subject"}
+Attachment: ${payload.attachmentUrl || "None"}
+Date: ${payload.submittedAt}
+
+Message:
+${payload.messageBody}
+`;
+
+  // 2. Production Resend delivery (if API key is configured)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const fromAddress =
+        process.env.CONTACT_FROM_EMAIL || "SDGC Website <inquiries@sdgc.redwan.work>";
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: fromAddress,
+          to: [recipient],
+          subject: emailSubject,
+          text: emailText,
+        }),
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (res.ok) {
+        processedNotifications.add(deduplicationKey);
+        return {
+          success: true,
+          deliveryMethod: "resend",
+          deduplicationKey,
+          recipient,
+          subject: emailSubject,
+        };
+      }
+    } catch {
+      // Fall through to local capture or failure reporting
+    }
+  }
+
+  // 3. Local capture delivery (Mailpit)
   const mailpitApiUrl = process.env.MAILPIT_API_URL || "http://127.0.0.1:54324";
 
   try {
