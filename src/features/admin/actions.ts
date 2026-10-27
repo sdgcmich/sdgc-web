@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { randomInt } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireCapability } from "@/features/auth/authorization";
@@ -288,7 +289,7 @@ export async function adminCreateMemberAction(
   if (!username) {
     const emailPrefix = trimmedEmail.split("@")[0] ?? "member";
     const base = emailPrefix.replace(/[^a-z0-9_]/g, "") || "member";
-    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    const randSuffix = randomInt(1000, 10000);
     username = `${base}_${randSuffix}`;
   }
 
@@ -300,7 +301,7 @@ export async function adminCreateMemberAction(
     .maybeSingle();
 
   if (existingProfile) {
-    username = `${username}_${Math.floor(100 + Math.random() * 900)}`;
+    username = `${username}_${randomInt(100, 1000)}`;
   }
 
   const tempPassword = input.password?.trim() || `${crypto.randomUUID()}!Aa1`;

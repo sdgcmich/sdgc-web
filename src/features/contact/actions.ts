@@ -1,5 +1,6 @@
-﻿"use server";
+"use server";
 
+import { randomInt } from "node:crypto";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contactSchema, type ContactFormData } from "./validation";
@@ -27,7 +28,7 @@ export async function submitContactAction(
     return {
       success: true,
       data: {
-        reference: `SDGC-BOT-${Math.floor(100000 + Math.random() * 900000)}`,
+        reference: `SDGC-BOT-${randomInt(100000, 1000000)}`,
       },
     };
   }
