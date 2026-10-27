@@ -624,7 +624,7 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
                   type="button"
                   onClick={() => setQuantity((q) => Math.max(0, q - 1))}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground hover:bg-muted font-bold text-base transition-colors cursor-pointer"
-                  aria-label="Decrease adult tickets"
+                  aria-label="Decrease tickets"
                 >
                   &minus;
                 </button>
@@ -635,7 +635,7 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
                   type="button"
                   onClick={() => setQuantity((q) => Math.min(20, q + 1))}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground hover:bg-muted font-bold text-base transition-colors cursor-pointer"
-                  aria-label="Increase adult tickets"
+                  aria-label="Increase tickets"
                 >
                   &#43;
                 </button>
