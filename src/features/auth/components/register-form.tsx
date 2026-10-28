@@ -43,6 +43,7 @@ export function RegisterForm() {
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [submittedEmail, setSubmittedEmail] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [userModifiedUsername, setUserModifiedUsername] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
@@ -247,19 +248,36 @@ export function RegisterForm() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="reg-username" required>
-              Desired Username
+              Club User Handle
             </Label>
-            <Input
-              id="reg-username"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              placeholder="e.g. daisy_miller"
-              error={errors.username}
-              aria-describedby={errors.username ? "username-error" : undefined}
-            />
-            {errors.username && (
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-xs font-bold font-mono text-muted-foreground select-none">
+                @
+              </span>
+              <Input
+                id="reg-username"
+                value={formData.username}
+                onChange={(e) => {
+                  setUserModifiedUsername(true);
+                  setFormData({
+                    ...formData,
+                    username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+                  });
+                }}
+                placeholder="e.g. daisy"
+                error={errors.username}
+                className="pl-7 font-mono font-medium"
+                aria-describedby={errors.username ? "username-error" : undefined}
+              />
+            </div>
+            {errors.username ? (
               <p id="username-error" className="mt-1 text-xs text-destructive">
                 {errors.username}
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Defaults to your first name. You can customize your handle now or update it anytime
+                in your profile.
               </p>
             )}
           </div>
@@ -350,7 +368,16 @@ export function RegisterForm() {
             <Input
               id="reg-firstname"
               value={formData.firstName}
-              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              onChange={(e) => {
+                const newFirst = e.target.value;
+                setFormData((prev) => ({
+                  ...prev,
+                  firstName: newFirst,
+                  username: userModifiedUsername
+                    ? prev.username
+                    : newFirst.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+                }));
+              }}
               placeholder="Daisy"
               error={errors.firstName}
               aria-describedby={errors.firstName ? "firstname-error" : undefined}

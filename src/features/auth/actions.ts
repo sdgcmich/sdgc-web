@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -252,7 +252,11 @@ export async function registerAction(
     options: {
       emailRedirectTo: `${siteUrl}/auth/confirm?next=/profile`,
       data: {
-        username: data.username.toLowerCase(),
+        username: (
+          data.username ||
+          data.firstName.toLowerCase().replace(/[^a-z0-9]/g, "") ||
+          "member"
+        ).toLowerCase(),
         first_name: data.firstName,
         last_name: data.lastName,
         phone: data.phoneHome || null,

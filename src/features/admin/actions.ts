@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomInt } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireCapability } from "@/features/auth/authorization";
+import { requireCapability, hasCapability } from "@/features/auth/authorization";
 import type { Database, Json } from "@/types/database";
 import { optimizeImage } from "@/lib/media/optimizer";
 import { getStorageProvider } from "@/lib/storage/provider";
@@ -211,20 +211,132 @@ export async function reconcilePaymentAction(input: {
 
 export async function setUserRolesAction(input: {
   userId: string;
-  roles: ("admin" | "editor" | "treasurer")[];
+  roles: ("super_admin" | "admin" | "editor" | "treasurer")[];
+  password?: string;
+  totp?: string;
 }): Promise<ActionResult> {
-  await requireCapability("roles.manage");
+  const actor = await requireCapability("roles.manage");
+  const actorIsSuperAdmin = await hasCapability("roles.admin", actor.id);
   const supabase = await createClient();
 
-  const VALID_ROLES = new Set(["admin", "editor", "treasurer"]);
+  const VALID_ROLES = new Set(["super_admin", "admin", "editor", "treasurer"]);
   for (const r of input.roles) {
     if (!VALID_ROLES.has(r)) {
       return { success: false, error: `Invalid role code: ${r}` };
     }
   }
 
-  // Check last-admin protection before updating
-  if (!input.roles.includes("admin")) {
+  // Fetch target user's current roles
+  const { data: currentRolesData } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", input.userId);
+  const currentRoles = (currentRolesData?.map((r) => r.role) || []) as string[];
+
+  // Determine if roles are changing
+  const sortedCurrent = [...currentRoles].sort();
+  const sortedNext = [...input.roles].sort();
+  const rolesChanged =
+    sortedCurrent.length !== sortedNext.length || sortedCurrent.some((r, i) => r !== sortedNext[i]);
+
+  if (!rolesChanged) {
+    return { success: true, message: "No role changes detected." };
+  }
+
+  // 1. Role Hierarchy Enforcement:
+  // - Only super_admin can grant, modify, or revoke super_admin
+  if (currentRoles.includes("super_admin") || input.roles.includes("super_admin")) {
+    if (!actorIsSuperAdmin) {
+      return {
+        success: false,
+        error:
+          "Access denied: Only a Super Administrator can assign, modify, or remove the Super Admin role.",
+      };
+    }
+  }
+
+  // - Only super_admin can promote or demote admin
+  if (currentRoles.includes("admin") || input.roles.includes("admin")) {
+    if (!actorIsSuperAdmin) {
+      return {
+        success: false,
+        error:
+          "Access denied: Only a Super Administrator can promote or demote an Administrator. Normal administrators can only manage Editor and Treasurer roles.",
+      };
+    }
+  }
+
+  // 2. Sudo / Step-Up Re-Authentication Requirement
+  const trimmedPassword = input.password?.trim();
+  const trimmedTotp = input.totp?.trim();
+
+  if (!trimmedPassword && !trimmedTotp) {
+    return {
+      success: false,
+      error:
+        "Step-up re-authentication required: Please enter your account password or 6-digit authenticator code to modify staff roles.",
+    };
+  }
+
+  let authVerified = false;
+  if (trimmedPassword) {
+    const { error: pwdError } = await supabase.auth.signInWithPassword({
+      email: actor.email,
+      password: trimmedPassword,
+    });
+    if (pwdError) {
+      return {
+        success: false,
+        error: "Step-up authentication failed: Incorrect account password.",
+      };
+    }
+    authVerified = true;
+  } else if (trimmedTotp) {
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const verifiedTotp = factors?.totp?.find((f) => f.status === "verified");
+    if (!verifiedTotp) {
+      return {
+        success: false,
+        error:
+          "No verified authenticator app enrolled. Please authenticate using your account password.",
+      };
+    }
+
+    const { error: totpErr } = await supabase.auth.mfa.challengeAndVerify({
+      factorId: verifiedTotp.id,
+      code: trimmedTotp,
+    });
+    if (totpErr) {
+      return {
+        success: false,
+        error: "Step-up authentication failed: Invalid 6-digit authenticator code.",
+      };
+    }
+    authVerified = true;
+  }
+
+  if (!authVerified) {
+    return {
+      success: false,
+      error: "Step-up re-authentication failed.",
+    };
+  }
+
+  // 3. Last Super Admin Protection
+  if (currentRoles.includes("super_admin") && !input.roles.includes("super_admin")) {
+    const { count, error: countErr } = await supabase
+      .from("user_roles")
+      .select("user_id", { count: "exact", head: true })
+      .eq("role", "super_admin")
+      .neq("user_id", input.userId);
+
+    if (countErr || (count !== null && count < 1)) {
+      return { success: false, error: "Cannot remove the last Super Administrator" };
+    }
+  }
+
+  // 4. Last Admin Protection
+  if (currentRoles.includes("admin") && !input.roles.includes("admin")) {
     const { count, error: countErr } = await supabase
       .from("user_roles")
       .select("user_id", { count: "exact", head: true })
@@ -236,6 +348,7 @@ export async function setUserRolesAction(input: {
     }
   }
 
+  // 5. Update user roles via RPC
   const { error: rpcError } = await supabase.rpc("set_user_roles", {
     p_target_user_id: input.userId,
     p_new_roles: input.roles,
@@ -245,8 +358,25 @@ export async function setUserRolesAction(input: {
     return { success: false, error: rpcError.message };
   }
 
+  // 6. Record Audit Event
+  try {
+    await supabase.from("audit_events").insert({
+      actor_id: actor.id,
+      action: "roles.updated",
+      entity_type: "user",
+      entity_id: input.userId,
+      details: {
+        previous_roles: currentRoles,
+        new_roles: input.roles,
+        verified_via: trimmedPassword ? "password" : "totp",
+      },
+    });
+  } catch {
+    // Non-blocking
+  }
+
   revalidatePath("/admin/members");
-  return { success: true, message: "User roles updated successfully" };
+  return { success: true, message: "Staff roles updated successfully" };
 }
 
 export interface AdminCreateMemberInput {
@@ -370,6 +500,15 @@ export async function adminCreateMemberAction(
 
   // Assign role if privileged role requested
   if (input.role && input.role !== "member") {
+    if (input.role === "admin" || (input.role as string) === "super_admin") {
+      const actorIsSuperAdmin = await hasCapability("roles.admin", actor.id);
+      if (!actorIsSuperAdmin) {
+        return {
+          success: false,
+          error: "Only a Super Administrator can assign the Administrator role to new members.",
+        };
+      }
+    }
     await supabase.rpc("set_user_roles", {
       p_target_user_id: newUserId,
       p_new_roles: [input.role],
@@ -429,26 +568,65 @@ export async function adminToggleMemberBanAction(input: {
   reason?: string;
 }): Promise<ActionResult> {
   const actor = await requireCapability("members.manage");
+  const actorIsSuperAdmin = await hasCapability("roles.admin", actor.id);
   const supabase = await createClient();
   const adminClient = createAdminClient();
 
   if (input.suspend) {
-    // Check if target has admin role and protect last admin
-    const { count, error: countErr } = await supabase
-      .from("user_roles")
-      .select("user_id", { count: "exact", head: true })
-      .eq("role", "admin")
-      .neq("user_id", input.userId);
-
-    const { data: targetAdmin } = await supabase
+    // Check target's roles
+    const { data: targetRolesData } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", input.userId)
-      .eq("role", "admin")
-      .maybeSingle();
+      .eq("user_id", input.userId);
+    const targetRoles = (targetRolesData?.map((r) => r.role) || []) as string[];
 
-    if (targetAdmin && (countErr || (count !== null && count < 1))) {
-      return { success: false, error: "Cannot suspend or ban the last administrator" };
+    // Hierarchy protections:
+    if (targetRoles.includes("super_admin")) {
+      if (!actorIsSuperAdmin) {
+        return {
+          success: false,
+          error:
+            "Access denied: Only a Super Administrator can suspend a Super Administrator account.",
+        };
+      }
+
+      // Protect last super admin
+      const { count: superCount } = await supabase
+        .from("user_roles")
+        .select("user_id", { count: "exact", head: true })
+        .eq("role", "super_admin")
+        .neq("user_id", input.userId);
+
+      if (superCount !== null && superCount < 1) {
+        return {
+          success: false,
+          error: "Cannot suspend or ban the last Super Administrator.",
+        };
+      }
+    }
+
+    if (targetRoles.includes("admin")) {
+      if (!actorIsSuperAdmin) {
+        return {
+          success: false,
+          error:
+            "Access denied: Only a Super Administrator can suspend an Administrator. Normal administrators can only manage standard members, Editors, and Treasurers.",
+        };
+      }
+
+      // Protect last admin
+      const { count: adminCount } = await supabase
+        .from("user_roles")
+        .select("user_id", { count: "exact", head: true })
+        .eq("role", "admin")
+        .neq("user_id", input.userId);
+
+      if (adminCount !== null && adminCount < 1) {
+        return {
+          success: false,
+          error: "Cannot suspend or ban the last Administrator.",
+        };
+      }
     }
 
     const { error: memErr } = await supabase

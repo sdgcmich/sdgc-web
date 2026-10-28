@@ -16,6 +16,7 @@ export interface MemberProfileInput {
   firstName: string;
   lastName: string;
   email: string;
+  avatarUrl?: string | null;
   phoneHome?: string;
   phoneCell?: string;
   addressLine1?: string;
@@ -66,6 +67,7 @@ export interface DirectoryMember {
   firstName: string;
   lastName: string;
   fullName: string;
+  avatarUrl?: string | null;
   phone?: string;
   secondaryPhone?: string;
   city?: string;

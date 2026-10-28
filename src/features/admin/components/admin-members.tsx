@@ -4,6 +4,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import type { AdminMemberRecord } from "../types";
 import {
@@ -19,12 +20,14 @@ interface AdminMembersProps {
   initialMembers: AdminMemberRecord[];
   initialStatusFilter?: string;
   isAdmin?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 export function AdminMembers({
   initialMembers,
   initialStatusFilter,
   isAdmin = false,
+  isSuperAdmin = false,
 }: AdminMembersProps) {
   const [members, setMembers] = React.useState<AdminMemberRecord[]>(initialMembers);
   const [filter, setFilter] = React.useState<string>("");
@@ -37,9 +40,14 @@ export function AdminMembers({
   const [selectedUserForRoles, setSelectedUserForRoles] = React.useState<AdminMemberRecord | null>(
     null,
   );
-  const [assignedRoles, setAssignedRoles] = React.useState<("admin" | "editor" | "treasurer")[]>(
-    [],
-  );
+  const [assignedRoles, setAssignedRoles] = React.useState<
+    ("super_admin" | "admin" | "editor" | "treasurer")[]
+  >([]);
+  const [isStepUpOpen, setIsStepUpOpen] = React.useState(false);
+  const [stepUpPassword, setStepUpPassword] = React.useState("");
+  const [stepUpTotp, setStepUpTotp] = React.useState("");
+  const [stepUpMethod, setStepUpMethod] = React.useState<"password" | "totp">("password");
+  const [stepUpError, setStepUpError] = React.useState<string | null>(null);
 
   // Profile Edit State
   const [editingMember, setEditingMember] = React.useState<AdminMemberRecord | null>(null);
@@ -229,21 +237,60 @@ export function AdminMembers({
 
   const handleOpenRoleModal = (member: AdminMemberRecord) => {
     setSelectedUserForRoles(member);
+    setIsStepUpOpen(false);
+    setStepUpPassword("");
+    setStepUpTotp("");
+    setStepUpError(null);
     const privilegedRoles = member.roles.filter(
-      (r): r is "admin" | "editor" | "treasurer" =>
-        r === "admin" || r === "editor" || r === "treasurer",
+      (r): r is "super_admin" | "admin" | "editor" | "treasurer" =>
+        r === "super_admin" || r === "admin" || r === "editor" || r === "treasurer",
     );
     setAssignedRoles(privilegedRoles);
   };
 
-  const handleSaveRoles = async () => {
+  const handleInitiateSaveRoles = () => {
     if (!selectedUserForRoles) return;
+    const currentPrivileged = selectedUserForRoles.roles.filter(
+      (r) => r === "super_admin" || r === "admin" || r === "editor" || r === "treasurer",
+    );
+    const sortedCurrent = [...currentPrivileged].sort();
+    const sortedNext = [...assignedRoles].sort();
+    const rolesChanged =
+      sortedCurrent.length !== sortedNext.length ||
+      sortedCurrent.some((r, i) => r !== sortedNext[i]);
+
+    if (!rolesChanged) {
+      setSelectedUserForRoles(null);
+      return;
+    }
+
+    setStepUpError(null);
+    setStepUpPassword("");
+    setStepUpTotp("");
+    setIsStepUpOpen(true);
+  };
+
+  const handleConfirmStepUpAndSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserForRoles) return;
+
+    if (stepUpMethod === "password" && !stepUpPassword.trim()) {
+      setStepUpError("Please enter your account password to verify.");
+      return;
+    }
+    if (stepUpMethod === "totp" && !stepUpTotp.trim()) {
+      setStepUpError("Please enter your 6-digit authenticator code.");
+      return;
+    }
+
     setIsSubmitting(true);
-    setIsError(false);
+    setStepUpError(null);
     try {
       const res = await setUserRolesAction({
         userId: selectedUserForRoles.userId,
         roles: assignedRoles,
+        password: stepUpMethod === "password" ? stepUpPassword.trim() : undefined,
+        totp: stepUpMethod === "totp" ? stepUpTotp.trim() : undefined,
       });
 
       if (res.success) {
@@ -257,15 +304,14 @@ export function AdminMembers({
               : m,
           ),
         );
-        setActionNotice(`Updated roles for ${selectedUserForRoles.name}.`);
+        setActionNotice(`Updated staff roles for ${selectedUserForRoles.name}.`);
+        setIsStepUpOpen(false);
         setSelectedUserForRoles(null);
       } else {
-        setIsError(true);
-        setActionNotice(`Role update rejected: ${res.error}`);
+        setStepUpError(res.error || "Failed to update roles.");
       }
     } catch (err: unknown) {
-      setIsError(true);
-      setActionNotice(err instanceof Error ? err.message : "An unexpected error occurred");
+      setStepUpError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -604,16 +650,18 @@ export function AdminMembers({
                           <span
                             key={r}
                             className={`rounded px-1.5 py-0.5 text-[10px] uppercase font-semibold ${
-                              r === "admin"
-                                ? "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200"
-                                : r === "editor"
-                                  ? "bg-blue-100 text-blue-900 dark:bg-blue-950/60 dark:text-blue-200"
-                                  : r === "treasurer"
-                                    ? "bg-purple-100 text-purple-900 dark:bg-purple-950/60 dark:text-purple-200"
-                                    : "bg-muted text-muted-foreground"
+                              r === "super_admin"
+                                ? "bg-rose-100 text-rose-900 dark:bg-rose-950/60 dark:text-rose-200 border border-rose-300 dark:border-rose-800"
+                                : r === "admin"
+                                  ? "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200"
+                                  : r === "editor"
+                                    ? "bg-blue-100 text-blue-900 dark:bg-blue-950/60 dark:text-blue-200"
+                                    : r === "treasurer"
+                                      ? "bg-purple-100 text-purple-900 dark:bg-purple-950/60 dark:text-purple-200"
+                                      : "bg-muted text-muted-foreground"
                             }`}
                           >
-                            {r}
+                            {r === "super_admin" ? "Super Admin" : r}
                           </span>
                         ))}
                         {isAdmin && (
@@ -683,7 +731,19 @@ export function AdminMembers({
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                disabled={isSubmitting}
+                                disabled={
+                                  isSubmitting ||
+                                  (!isSuperAdmin &&
+                                    (member.roles.includes("admin") ||
+                                      member.roles.includes("super_admin")))
+                                }
+                                title={
+                                  !isSuperAdmin &&
+                                  (member.roles.includes("admin") ||
+                                    member.roles.includes("super_admin"))
+                                    ? "Only Super Administrators can suspend staff accounts"
+                                    : undefined
+                                }
                                 onClick={() => {
                                   setSuspendReason("");
                                   setSuspendingMember(member);
@@ -715,20 +775,28 @@ export function AdminMembers({
       </div>
 
       {/* Role Management / Promote & Demote Modal */}
-      {selectedUserForRoles && (
+      {selectedUserForRoles && !isStepUpOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="manage-roles-modal-title"
-            className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl space-y-4"
+            className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl space-y-4"
           >
-            <h2
-              id="manage-roles-modal-title"
-              className="font-serif text-xl font-bold text-foreground"
-            >
-              Manage Roles & Permissions
-            </h2>
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <h2
+                id="manage-roles-modal-title"
+                className="font-serif text-xl font-bold text-foreground"
+              >
+                Manage Staff Roles &amp; Permissions
+              </h2>
+              {isSuperAdmin && (
+                <span className="rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                  Super Admin Mode
+                </span>
+              )}
+            </div>
+
             <p className="text-xs text-muted-foreground">
               User:{" "}
               <span className="font-semibold text-foreground">{selectedUserForRoles.name}</span> (@
@@ -737,45 +805,72 @@ export function AdminMembers({
             </p>
 
             <div className="space-y-3 pt-2">
-              {(["admin", "editor", "treasurer"] as const).map((role) => {
+              {(
+                [
+                  {
+                    role: "super_admin" as const,
+                    title: "Super Administrator",
+                    desc: "Full system ownership, super administrator and admin promotions, and root security.",
+                    restricted: !isSuperAdmin,
+                  },
+                  {
+                    role: "admin" as const,
+                    title: "Administrator",
+                    desc: "Full administrative control, RBAC, member management, and site settings.",
+                    restricted: !isSuperAdmin,
+                  },
+                  {
+                    role: "editor" as const,
+                    title: "Editor",
+                    desc: "Publish and manage events, photo galleries, notices, and web pages.",
+                    restricted: false,
+                  },
+                  {
+                    role: "treasurer" as const,
+                    title: "Treasurer",
+                    desc: "Reconcile paper checks, verify dues payments, and approve memberships.",
+                    restricted: false,
+                  },
+                ] as const
+              ).map(({ role, title, desc, restricted }) => {
                 const checked = assignedRoles.includes(role);
                 return (
                   <label
                     key={role}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      checked
-                        ? "border-primary/50 bg-primary/5"
-                        : "border-border bg-background hover:bg-muted/30"
+                    className={`flex items-start gap-3 p-3.5 rounded-xl border transition-colors ${
+                      restricted
+                        ? "opacity-60 bg-muted/30 border-border cursor-not-allowed"
+                        : checked
+                          ? "border-primary/50 bg-primary/5 cursor-pointer"
+                          : "border-border bg-background hover:bg-muted/30 cursor-pointer"
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
+                      disabled={restricted}
                       onChange={(e) => {
+                        if (restricted) return;
                         if (e.target.checked) {
                           setAssignedRoles([...assignedRoles, role]);
                         } else {
                           setAssignedRoles(assignedRoles.filter((r) => r !== role));
                         }
                       }}
-                      className="rounded border-input text-primary h-4 w-4"
+                      className="rounded border-input text-primary h-4 w-4 mt-0.5"
                     />
-                    <div>
-                      <span className="text-sm font-semibold text-foreground uppercase tracking-wider block">
-                        {role === "admin"
-                          ? "Administrator"
-                          : role === "editor"
-                            ? "Editor"
-                            : "Treasurer"}
-                      </span>
-                      <span className="text-xs text-muted-foreground block">
-                        {role === "admin" &&
-                          "Full administrative control, RBAC, member management, and site settings"}
-                        {role === "editor" &&
-                          "Publish and manage events, photo galleries, notices, and web pages"}
-                        {role === "treasurer" &&
-                          "Reconcile paper checks, verify dues payments, and approve memberships"}
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground uppercase tracking-wider">
+                          {title}
+                        </span>
+                        {restricted && (
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground border border-border">
+                            Requires Super Admin
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground block mt-0.5">{desc}</span>
                     </div>
                   </label>
                 );
@@ -795,11 +890,185 @@ export function AdminMembers({
               >
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleSaveRoles} disabled={isSubmitting}>
-                Save Roles
+              <Button size="sm" onClick={handleInitiateSaveRoles} disabled={isSubmitting}>
+                Review &amp; Apply Changes
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Step-Up Re-Authentication & Security Warning Modal */}
+      {selectedUserForRoles && isStepUpOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <form
+            onSubmit={handleConfirmStepUpAndSave}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="step-up-modal-title"
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl space-y-5"
+          >
+            <div>
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-1">
+                <svg
+                  className="h-5 w-5 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                  />
+                </svg>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  Security Warning &bull; Privileged Action
+                </span>
+              </div>
+              <h2 id="step-up-modal-title" className="font-serif text-xl font-bold text-foreground">
+                Confirm Staff Role Modification
+              </h2>
+            </div>
+
+            <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-3.5 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+              <p className="font-semibold">
+                Promoting or demoting staff roles alters privileged administrative access.
+              </p>
+              <p className="text-[11px] opacity-90">
+                Target User: <span className="font-bold">{selectedUserForRoles.name}</span> (@
+                {selectedUserForRoles.username})
+              </p>
+            </div>
+
+            {/* Privileges Summary */}
+            <div className="space-y-1.5 rounded-xl border border-border/70 bg-muted/20 p-3.5 text-xs">
+              <span className="font-semibold text-foreground block text-[11px] uppercase tracking-wider">
+                Role Modifications:
+              </span>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {assignedRoles.length === 0 ? (
+                  <span className="rounded bg-muted px-2 py-0.5 text-muted-foreground font-mono text-xs">
+                    Standard Member Only (All staff roles removed)
+                  </span>
+                ) : (
+                  assignedRoles.map((role) => (
+                    <span
+                      key={role}
+                      className="rounded bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-xs font-semibold uppercase"
+                    >
+                      +{role}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Sudo Re-Auth Method Selector */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <span className="text-xs font-bold text-foreground">
+                  Verify Identity to Authorize
+                </span>
+                <div className="flex gap-1 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStepUpMethod("password");
+                      setStepUpError(null);
+                    }}
+                    className={`px-2 py-0.5 rounded font-medium cursor-pointer ${
+                      stepUpMethod === "password"
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStepUpMethod("totp");
+                      setStepUpError(null);
+                    }}
+                    className={`px-2 py-0.5 rounded font-medium cursor-pointer ${
+                      stepUpMethod === "totp"
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Authenticator TOTP
+                  </button>
+                </div>
+              </div>
+
+              {stepUpMethod === "password" ? (
+                <div>
+                  <Label htmlFor="step-up-pwd" required className="text-xs">
+                    Your Administrator Account Password
+                  </Label>
+                  <Input
+                    id="step-up-pwd"
+                    type="password"
+                    autoFocus
+                    value={stepUpPassword}
+                    onChange={(e) => setStepUpPassword(e.target.value)}
+                    placeholder="Enter your current password"
+                    className="mt-1"
+                  />
+                  <span className="text-[11px] text-muted-foreground block mt-1">
+                    Re-enter your credentials to confirm staff elevation or demotion.
+                  </span>
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="step-up-totp" required className="text-xs">
+                    6-Digit Authenticator App Code
+                  </Label>
+                  <Input
+                    id="step-up-totp"
+                    type="text"
+                    inputMode="numeric"
+                    autoFocus
+                    maxLength={6}
+                    value={stepUpTotp}
+                    onChange={(e) => setStepUpTotp(e.target.value.replace(/\D/g, ""))}
+                    placeholder="123456"
+                    className="mt-1 font-mono tracking-widest text-center text-lg"
+                  />
+                  <span className="text-[11px] text-muted-foreground block mt-1">
+                    Enter the current 6-digit TOTP code from Google Authenticator or your 2FA app.
+                  </span>
+                </div>
+              )}
+
+              {stepUpError && (
+                <div
+                  className="rounded-lg bg-destructive/10 border border-destructive/30 p-2.5 text-xs text-destructive font-medium"
+                  role="alert"
+                >
+                  {stepUpError}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsStepUpOpen(false)}
+                disabled={isSubmitting}
+              >
+                Back
+              </Button>
+              <Button type="submit" size="sm" disabled={isSubmitting} className="shadow-2xs">
+                {isSubmitting ? "Verifying..." : "Confirm & Save Roles"}
+              </Button>
+            </div>
+          </form>
         </div>
       )}
 
@@ -951,9 +1220,11 @@ export function AdminMembers({
                       className="w-full rounded-md border border-input bg-card p-2 text-sm text-foreground shadow-xs focus:ring-primary focus:outline-none cursor-pointer"
                     >
                       <option value="member">Regular Member</option>
-                      <option value="editor">Editor (Content & Events)</option>
-                      <option value="treasurer">Treasurer (Dues & Approvals)</option>
-                      <option value="admin">Administrator (Full Access)</option>
+                      <option value="editor">Editor (Content &amp; Events)</option>
+                      <option value="treasurer">Treasurer (Dues &amp; Approvals)</option>
+                      <option value="admin" disabled={!isSuperAdmin}>
+                        Administrator (Full Access){!isSuperAdmin ? " — Requires Super Admin" : ""}
+                      </option>
                     </select>
                   </div>
                   <div>

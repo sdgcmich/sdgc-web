@@ -1,6 +1,6 @@
 import type { MemberProfile } from "@/features/membership/types";
 
-export type AppRole = "admin" | "editor" | "treasurer";
+export type AppRole = "super_admin" | "admin" | "editor" | "treasurer";
 
 export type Capability =
   | "content.manage"
@@ -11,6 +11,8 @@ export type Capability =
   | "members.manage"
   | "messages.manage"
   | "roles.manage"
+  | "roles.admin"
+  | "super_admin.manage"
   | "settings.manage"
   | "audit.view";
 

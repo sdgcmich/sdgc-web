@@ -95,17 +95,29 @@ export function MemberCard({ profile }: MemberCardProps) {
           </div>
 
           {/* Member Identity */}
-          <div className="space-y-0.5 relative z-10">
-            <div className="text-[15px] font-serif font-bold text-foreground leading-tight truncate">
-              {profile.firstName} {profile.lastName}
-            </div>
-            <div className="flex items-center gap-1.5 text-[8.5px] text-muted-foreground leading-none">
-              <span className="font-mono">@{profile.username}</span>
-              {profile.city && (
-                <span>
-                  &bull; {profile.city}, {profile.state || "MI"}
-                </span>
-              )}
+          <div className="flex items-center gap-2 relative z-10">
+            {profile.avatarUrl ? (
+              <Image
+                src={profile.avatarUrl}
+                alt=""
+                width={32}
+                height={32}
+                className="h-8 w-8 rounded-full border border-primary/30 object-cover shadow-2xs shrink-0"
+                unoptimized
+              />
+            ) : null}
+            <div className="space-y-0.5 min-w-0">
+              <div className="text-[14px] font-serif font-bold text-foreground leading-tight truncate">
+                {profile.firstName} {profile.lastName}
+              </div>
+              <div className="flex items-center gap-1.5 text-[8.5px] text-muted-foreground leading-none">
+                <span className="font-mono">@{profile.username}</span>
+                {profile.city && (
+                  <span>
+                    &bull; {profile.city}, {profile.state || "MI"}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
