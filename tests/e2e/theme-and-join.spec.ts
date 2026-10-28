@@ -79,7 +79,7 @@ test.describe("Theme Toggle & Modern Join Page Experience", () => {
     await expect(signInLink).toBeVisible();
 
     // Verify full registration form
-    await expect(page.getByLabel(/Desired Username/i)).toBeVisible();
+    await expect(page.getByLabel(/Desired Username|Handle/i)).toBeVisible();
     await expect(page.getByLabel(/Email Address/i)).toBeVisible();
     await expect(page.getByLabel(/^First Name/i)).toBeVisible();
     await expect(page.getByLabel(/^Last Name/i)).toBeVisible();

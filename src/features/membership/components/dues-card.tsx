@@ -340,8 +340,17 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
             </div>
           </div>
 
-          {effectiveReceiptId && (
-            <div className="pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <button
+              type="button"
+              disabled
+              aria-disabled="true"
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-600/30 bg-emerald-600/10 px-4 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300 cursor-default"
+            >
+              {membership.year} Dues Paid &amp; Confirmed
+            </button>
+
+            {effectiveReceiptId && (
               <a
                 href={`/api/payments/receipt/${effectiveReceiptId}/pdf`}
                 target="_blank"
@@ -364,8 +373,8 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
                 </svg>
                 Download Official 501(c)(3) Dues Receipt (PDF)
               </a>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       ) : isPending ? (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 shadow-xs space-y-4">

@@ -248,7 +248,7 @@ export function RegisterForm() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="reg-username" required>
-              Club User Handle
+              Desired Username / Handle
             </Label>
             <div className="relative">
               <span className="absolute left-3 top-2.5 text-xs font-bold font-mono text-muted-foreground select-none">
