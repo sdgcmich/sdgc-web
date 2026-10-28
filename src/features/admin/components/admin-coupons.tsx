@@ -410,6 +410,25 @@ export function AdminCoupons({ initialCoupons, events }: AdminCouponsProps) {
                             {c.description}
                           </span>
                         )}
+                        <div className="text-[10px] text-muted-foreground mt-1.5 space-y-0.5 border-t border-border/40 pt-1">
+                          <span className="block font-medium">
+                            {c.isPublicPurchase
+                              ? `Issued via Public Site (${c.purchaserName || c.purchaserEmail || "Visitor"})`
+                              : c.createdByName
+                                ? `Created by ${c.createdByName}${c.createdByUsername ? ` (@${c.createdByUsername})` : ""}`
+                                : "Created by Club Staff"}
+                          </span>
+                          <span className="block text-muted-foreground/75 font-mono">
+                            {new Date(c.createdAt).toLocaleString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                              timeZone: "America/Detroit",
+                            })}
+                          </span>
+                        </div>
                       </td>
 
                       <td className="p-4">
@@ -492,17 +511,26 @@ export function AdminCoupons({ initialCoupons, events }: AdminCouponsProps) {
                             disabled={isSubmitting}
                             className="text-xs h-7 px-2.5"
                           >
-                            {c.isActive ? "Disable" : "Enable"}
+                            {c.isActive ? "Deactivate" : "Activate"}
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDelete(c)}
-                            disabled={isSubmitting}
-                            className="text-xs h-7 px-2 text-destructive hover:bg-destructive/10"
-                          >
-                            Delete
-                          </Button>
+                          {c.isPublicPurchase ? (
+                            <span
+                              className="inline-flex items-center rounded-lg bg-muted/60 border border-border/60 px-2 py-1 text-[10px] font-medium text-muted-foreground select-none cursor-not-allowed"
+                              title="Publicly purchased gift passes cannot be deleted to preserve financial audit history."
+                            >
+                              Locked
+                            </span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDelete(c)}
+                              disabled={isSubmitting}
+                              className="text-xs h-7 px-2 text-destructive hover:bg-destructive/10"
+                            >
+                              Delete
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -59,11 +59,10 @@ export function MemberCard({ profile }: MemberCardProps) {
       </div>
 
       {/* Printable Botanical Member Card (CR80 Standard Size: 3.375" × 2.125" / 85.6 × 54 mm) */}
-      <div className="flex justify-center overflow-x-auto py-2">
+      <div className="flex justify-center py-2 px-1">
         <div
           id="sdgc-printable-member-card"
-          className="w-[3.375in] h-[2.125in] min-w-[3.375in] min-h-[2.125in] max-w-[3.375in] max-h-[2.125in] rounded-xl border-2 border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 p-2.5 shadow-md relative overflow-hidden text-foreground flex flex-col justify-between box-border select-none"
-          style={{ width: "3.375in", height: "2.125in" }}
+          className="w-full max-w-[3.375in] h-[2.125in] sm:w-[3.375in] rounded-xl border-2 border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 p-2.5 shadow-md relative overflow-hidden text-foreground flex flex-col justify-between box-border select-none"
         >
           {/* Subtle botanical watermarked logo */}
           <div className="absolute -right-6 -bottom-6 opacity-10 pointer-events-none select-none">

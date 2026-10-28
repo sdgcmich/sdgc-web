@@ -268,12 +268,10 @@ export async function verifyMemberAction(
       lookupTerm = lookupTerm.slice(9);
     }
 
-    // Query profiles matching prefix or username
-    const { data: profiles, error } = await supabase
-      .from("profiles")
-      .select("id, username, first_name, last_name, city, state, is_master_gardener, created_at")
-      .or(`id.ilike.${lookupTerm}%,username.ilike.${lookupTerm}`)
-      .limit(1);
+    // Query profiles matching UUID prefix, username, or credential code via RPC
+    const { data: profiles, error } = await supabase.rpc("lookup_member_credential", {
+      lookup_code: lookupTerm,
+    });
 
     if (error) {
       return { success: false, error: error.message };
@@ -296,7 +294,6 @@ export async function verifyMemberAction(
       .from("memberships")
       .select("status, membership_terms(year, opens_at, closes_at)")
       .eq("user_id", profile.id)
-      .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(1);
 

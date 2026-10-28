@@ -108,17 +108,29 @@ isOneToOne: false
                   ]
                 },"event_coupons": {
                   Row: {
-                    "code": string,"created_at": string,"description": string | null,"discount_type": string,"discount_value": number,"event_id": string | null,"gift_message": string | null,"id": string,"is_active": boolean,"is_gift": boolean,"max_uses": number | null,"order_reference": string | null,"purchaser_email": string | null,"purchaser_name": string | null,"recipient_email": string | null,"recipient_name": string | null,"stripe_session_id": string | null,"times_used": number,"updated_at": string,"valid_from": string | null,"valid_until": string | null
+                    "code": string,"created_at": string,"created_by": string | null,"description": string | null,"discount_type": string,"discount_value": number,"event_id": string | null,"gift_message": string | null,"id": string,"is_active": boolean,"is_gift": boolean,"max_uses": number | null,"order_reference": string | null,"purchaser_email": string | null,"purchaser_name": string | null,"recipient_email": string | null,"recipient_name": string | null,"stripe_session_id": string | null,"times_used": number,"updated_at": string,"valid_from": string | null,"valid_until": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "code": string,"created_at"?: string,"description"?: string | null,"discount_type"?: string,"discount_value": number,"event_id"?: string | null,"gift_message"?: string | null,"id"?: string,"is_active"?: boolean,"is_gift"?: boolean,"max_uses"?: number | null,"order_reference"?: string | null,"purchaser_email"?: string | null,"purchaser_name"?: string | null,"recipient_email"?: string | null,"recipient_name"?: string | null,"stripe_session_id"?: string | null,"times_used"?: number,"updated_at"?: string,"valid_from"?: string | null,"valid_until"?: string | null
+                    "code": string,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"discount_type"?: string,"discount_value": number,"event_id"?: string | null,"gift_message"?: string | null,"id"?: string,"is_active"?: boolean,"is_gift"?: boolean,"max_uses"?: number | null,"order_reference"?: string | null,"purchaser_email"?: string | null,"purchaser_name"?: string | null,"recipient_email"?: string | null,"recipient_name"?: string | null,"stripe_session_id"?: string | null,"times_used"?: number,"updated_at"?: string,"valid_from"?: string | null,"valid_until"?: string | null
                   }
                   Update: {
-                    "code"?: string,"created_at"?: string,"description"?: string | null,"discount_type"?: string,"discount_value"?: number,"event_id"?: string | null,"gift_message"?: string | null,"id"?: string,"is_active"?: boolean,"is_gift"?: boolean,"max_uses"?: number | null,"order_reference"?: string | null,"purchaser_email"?: string | null,"purchaser_name"?: string | null,"recipient_email"?: string | null,"recipient_name"?: string | null,"stripe_session_id"?: string | null,"times_used"?: number,"updated_at"?: string,"valid_from"?: string | null,"valid_until"?: string | null
+                    "code"?: string,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"discount_type"?: string,"discount_value"?: number,"event_id"?: string | null,"gift_message"?: string | null,"id"?: string,"is_active"?: boolean,"is_gift"?: boolean,"max_uses"?: number | null,"order_reference"?: string | null,"purchaser_email"?: string | null,"purchaser_name"?: string | null,"recipient_email"?: string | null,"recipient_name"?: string | null,"stripe_session_id"?: string | null,"times_used"?: number,"updated_at"?: string,"valid_from"?: string | null,"valid_until"?: string | null
                   }
                   Relationships: [
                     {
+      foreignKeyName: "event_coupons_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "member_directory"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "event_coupons_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "event_coupons_event_id_fkey"
       columns: ["event_id"]
 isOneToOne: false
@@ -485,6 +497,11 @@ isOneToOne: false
                            },
 "log_audit_event":
 { Args: { "p_action": string,"p_details"?: Json,"p_entity_id"?: string,"p_entity_type": string }; Returns: string
+                           },
+"lookup_member_credential":
+{ Args: { "lookup_code": string }; Returns: {
+              "city": string,"created_at": string,"first_name": string,"id": string,"is_master_gardener": boolean,"last_name": string,"state": string,"username": string
+            }[]
                            },
 "reconcile_payment":
 { Args: { "p_notes"?: string,"p_payment_id": string }; Returns: Json

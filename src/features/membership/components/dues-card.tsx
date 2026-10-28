@@ -84,8 +84,13 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
 
     if (paymentStatusParam === "cancelled") {
       setPaymentActionMessage(
-        "Stripe checkout was cancelled. No charges were made to your account.",
+        "Stripe checkout was cancelled. No charges were made to your account. You may choose a payment method and try again.",
       );
+      // Automatically cancel the pending payment intent in database to release lock immediately
+      cancelPendingDuesPaymentAction().then(() => {
+        setCurrentPaymentStatus("unpaid");
+        router.refresh();
+      });
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [sessionId, paymentStatusParam, isSuccessParam, router]);
@@ -194,7 +199,7 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
               membership.paymentMethod === "check" ? (
                 <Badge variant="warning">Check Awaiting Clearance</Badge>
               ) : (
-                <Badge variant="warning">Payment Processing</Badge>
+                <Badge variant="warning">Checkout In Progress</Badge>
               )
             ) : (
               <Badge variant="outline">Payment Due</Badge>
@@ -217,7 +222,9 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
                 ? "No payment submitted"
                 : isPending && membership.paymentMethod === "check"
                   ? "Check Awaiting Clearance"
-                  : currentPaymentStatus}
+                  : isPending
+                    ? "Checkout In Progress"
+                    : currentPaymentStatus}
             </span>
           </div>
 
@@ -381,12 +388,14 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
             </div>
             <div>
               <h3 className="font-serif text-xl font-bold text-foreground">
-                Payment In Progress / Awaiting Clearance
+                {membership.paymentMethod === "check"
+                  ? "Check Received &bull; Awaiting Clearance"
+                  : "Card Checkout In Progress"}
               </h3>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                An annual dues transaction of {formattedDues} is currently pending clearance. If you
-                just completed payment in Stripe, verification can take up to 1-2 minutes. Duplicate
-                payments are blocked while an existing payment is processing.
+                {membership.paymentMethod === "check"
+                  ? `An annual dues payment of ${formattedDues} by check is awaiting treasurer verification and bank clearance.`
+                  : `An annual dues card transaction of ${formattedDues} was initiated. If you completed payment in Stripe, click "Check / Refresh Status". If you did not finish or want to use another method, click "Cancel Pending Intent & Retry".`}
               </p>
             </div>
           </div>
@@ -542,11 +551,13 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
               <tbody className="divide-y divide-border">
                 {paymentHistory.map((p) => (
                   <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="p-3 text-xs text-foreground">
-                      {new Date(p.createdAt).toLocaleDateString("en-US", {
+                    <td className="p-3 text-xs text-foreground whitespace-nowrap">
+                      {new Date(p.createdAt).toLocaleString("en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
                         timeZone: "America/Detroit",
                       })}
                     </td>
@@ -563,8 +574,10 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
                         <Badge variant="destructive">Failed / Cancelled</Badge>
                       ) : p.status === "refunded" ? (
                         <Badge variant="outline">Refunded</Badge>
-                      ) : (
+                      ) : p.paymentMethod === "check" ? (
                         <Badge variant="warning">Awaiting Clearance</Badge>
+                      ) : (
+                        <Badge variant="warning">Checkout In Progress</Badge>
                       )}
                     </td>
                     <td className="p-3 text-xs text-right font-mono">

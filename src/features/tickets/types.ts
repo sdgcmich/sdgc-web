@@ -113,6 +113,10 @@ export interface TicketCoupon {
   purchaserEmail?: string | null;
   giftMessage?: string | null;
   orderReference?: string | null;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  createdByUsername?: string | null;
+  isPublicPurchase?: boolean;
   createdAt: string;
 }
 

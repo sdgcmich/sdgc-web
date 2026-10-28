@@ -452,12 +452,23 @@ export function AdminDues({
                   </div>
                   <Badge
                     variant={
-                      records.filter((r) => r.status === "pending").length > 0
+                      records.filter(
+                        (r) =>
+                          r.status === "pending" &&
+                          (r.paymentMethod === "check" || r.paymentMethod === "cash"),
+                      ).length > 0
                         ? "warning"
                         : "secondary"
                     }
                   >
-                    {records.filter((r) => r.status === "pending").length} pending
+                    {
+                      records.filter(
+                        (r) =>
+                          r.status === "pending" &&
+                          (r.paymentMethod === "check" || r.paymentMethod === "cash"),
+                      ).length
+                    }{" "}
+                    pending
                   </Badge>
                 </div>
 
@@ -582,10 +593,11 @@ export function AdminDues({
           </div>
 
           <div className="overflow-x-auto overscroll-x-contain">
-            <table className="w-full text-left text-sm min-w-[700px]">
+            <table className="w-full text-left text-sm min-w-[750px]">
               <thead className="border-b border-border bg-muted/50 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="p-4">Member</th>
+                  <th className="p-4">Date &amp; Time</th>
                   <th className="p-4">Year</th>
                   <th className="p-4">Amount</th>
                   <th className="p-4">Method</th>
@@ -596,7 +608,7 @@ export function AdminDues({
               <tbody className="divide-y divide-border">
                 {paginatedDues.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground text-xs">
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground text-xs">
                       No payment records match the current filter.
                     </td>
                   </tr>
@@ -614,6 +626,16 @@ export function AdminDues({
                           </span>
                         )}
                       </td>
+                      <td className="p-4 text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(r.createdAt).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          timeZone: "America/Detroit",
+                        })}
+                      </td>
                       <td className="p-4 text-muted-foreground">{r.year}</td>
                       <td className="p-4 font-semibold text-foreground">
                         ${(r.amountCents / 100).toFixed(2)}
@@ -628,16 +650,29 @@ export function AdminDues({
                           <Badge variant="destructive">Failed</Badge>
                         ) : r.status === "refunded" ? (
                           <Badge variant="outline">Refunded</Badge>
-                        ) : (
+                        ) : r.paymentMethod === "check" || r.paymentMethod === "cash" ? (
                           <Badge variant="warning">Awaiting Clearance</Badge>
+                        ) : (
+                          <Badge variant="warning">Checkout In Progress</Badge>
                         )}
                       </td>
                       <td className="p-4 text-right">
                         {r.status === "confirmed" ? (
                           <span className="text-xs text-muted-foreground">
                             {r.reconciledAt
-                              ? `Cleared: ${new Date(r.reconciledAt).toLocaleDateString()}`
+                              ? `Cleared: ${new Date(r.reconciledAt).toLocaleString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  timeZone: "America/Detroit",
+                                })}`
                               : "Confirmed electronically"}
+                          </span>
+                        ) : r.paymentMethod === "credit_card" ? (
+                          <span className="text-xs text-muted-foreground italic">
+                            Awaiting Stripe completion
                           </span>
                         ) : (
                           <div>

@@ -920,7 +920,14 @@ export async function listAdminCouponsAction(): Promise<ActionResult<TicketCoupo
       purchaser_email,
       gift_message,
       order_reference,
+      stripe_session_id,
+      created_by,
       created_at,
+      created_by_profile:profiles!event_coupons_created_by_fkey (
+        first_name,
+        last_name,
+        username
+      ),
       events (
         title
       )
@@ -934,6 +941,15 @@ export async function listAdminCouponsAction(): Promise<ActionResult<TicketCoupo
 
   const coupons: TicketCoupon[] = rows.map((r) => {
     const event = r.events as { title?: string } | null;
+    const creator = r.created_by_profile as {
+      first_name?: string;
+      last_name?: string;
+      username?: string;
+    } | null;
+    const createdByName = creator
+      ? `${creator.first_name || ""} ${creator.last_name || ""}`.trim() || `@${creator.username}`
+      : null;
+
     return {
       id: r.id,
       code: r.code,
@@ -954,6 +970,10 @@ export async function listAdminCouponsAction(): Promise<ActionResult<TicketCoupo
       purchaserEmail: r.purchaser_email,
       giftMessage: r.gift_message,
       orderReference: r.order_reference,
+      createdBy: r.created_by,
+      createdByName,
+      createdByUsername: creator?.username || null,
+      isPublicPurchase: Boolean(r.stripe_session_id || r.order_reference || r.purchaser_email),
       createdAt: r.created_at,
     };
   });
@@ -1005,6 +1025,7 @@ export async function createCouponAction(input: {
       recipient_name: input.recipientName?.trim() || null,
       recipient_email: input.recipientEmail?.trim() || null,
       gift_message: input.giftMessage?.trim() || null,
+      created_by: user.id,
     })
     .select("id, code, created_at")
     .single();
@@ -1074,6 +1095,28 @@ export async function toggleCouponActiveAction(
 export async function deleteCouponAction(couponId: string): Promise<ActionResult> {
   const user = await requireCapability("events.manage");
   const supabase = await createClient();
+
+  // Guard: Publicly purchased gift passes cannot be deleted to preserve financial audit history
+  const { data: coupon, error: fetchErr } = await supabase
+    .from("event_coupons")
+    .select("id, is_gift, stripe_session_id, order_reference, purchaser_email")
+    .eq("id", couponId)
+    .maybeSingle();
+
+  if (fetchErr || !coupon) {
+    return { success: false, error: "Coupon or gift pass record not found." };
+  }
+
+  if (
+    coupon.is_gift &&
+    (coupon.stripe_session_id || coupon.order_reference || coupon.purchaser_email)
+  ) {
+    return {
+      success: false,
+      error:
+        "Publicly purchased gift passes cannot be deleted to preserve financial audit history. You may cancel or deactivate the pass instead.",
+    };
+  }
 
   const { error } = await supabase.from("event_coupons").delete().eq("id", couponId);
   if (error) {
