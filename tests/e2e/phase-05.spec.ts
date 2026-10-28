@@ -169,8 +169,14 @@ test.describe("Phase P5 — Public Data, Contact & Financial Workflows", () => {
     await page.goto("/membership");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Annual Membership & Dues");
 
-    // Pay $50 dues online via local simulated provider
+    // Wait for Suspense boundary to hydrate and present either the payment button or confirmed/pending state
     const payBtn = page.getByRole("button", { name: /Pay \$50\.00 Dues Online/i });
+    const confirmedHeading = page.getByRole("heading", {
+      name: /Annual Dues Paid & Confirmed|Payment In Progress/i,
+    });
+    const confirmedBtn = page.getByRole("button", { name: /Dues Paid & Confirmed/i });
+    await expect(payBtn.or(confirmedHeading).or(confirmedBtn)).toBeVisible({ timeout: 10000 });
+
     if (await payBtn.isVisible()) {
       await payBtn.click();
       await expect(page.getByRole("status").or(page.getByRole("alert"))).toBeVisible({
@@ -183,9 +189,9 @@ test.describe("Phase P5 — Public Data, Contact & Financial Workflows", () => {
           .or(page.getByText(/Simulated payment provider/i)),
       ).toBeVisible();
 
-      const confirmedBtn = page.getByRole("button", { name: "2026 Dues Paid & Confirmed" });
-      if (await confirmedBtn.isVisible()) {
-        await expect(confirmedBtn).toBeVisible();
+      const confirmedBtnAfter = page.getByRole("button", { name: /2026 Dues Paid & Confirmed/i });
+      if (await confirmedBtnAfter.isVisible()) {
+        await expect(confirmedBtnAfter).toBeVisible();
       }
     } else {
       await expect(
