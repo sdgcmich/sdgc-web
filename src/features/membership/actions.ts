@@ -7,6 +7,7 @@ import { requireUser } from "@/features/auth/authorization";
 import type { MemberProfileInput } from "@/features/membership/types";
 import { memberProfileSchema } from "@/features/membership/validation";
 import { getStorageProvider } from "@/lib/storage/provider";
+import { validateUploadFile } from "@/lib/storage/upload-security";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updateOwnProfileAction(
@@ -74,26 +75,23 @@ export async function uploadProfilePhotoAction(
     return { success: false, error: "Please select an image file to upload." };
   }
 
-  // Allowed mime types
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-  if (!allowedTypes.includes(file.type)) {
+  // Strictly validate file upload: verify image magic bytes, extension, anti-polyglot
+  const validation = await validateUploadFile(file, {
+    category: "image",
+    maxSizeBytes: 5 * 1024 * 1024, // 5MB limit
+    fallbackBase: "avatar",
+  });
+
+  if (!validation.valid || !validation.sanitizedBuffer) {
     return {
       success: false,
-      error: "Only JPEG, PNG, WebP, and GIF images are supported.",
+      error: validation.error || "Profile photo validation failed.",
     };
   }
 
-  // 5MB maximum file upload
-  const MAX_SIZE = 5 * 1024 * 1024;
-  if (file.size > MAX_SIZE) {
-    return { success: false, error: "Profile photo must be less than 5MB." };
-  }
-
   try {
-    const rawBuffer = Buffer.from(await file.arrayBuffer());
-
-    // Resize to standard 512x512 square WebP (cover fit, center crop, 85% quality)
-    const resizedBuffer = await sharp(rawBuffer)
+    // Re-crop and resize the sanitized buffer to 512x512 square WebP (cover fit, center crop)
+    const resizedBuffer = await sharp(validation.sanitizedBuffer)
       .rotate()
       .resize(512, 512, {
         fit: "cover",

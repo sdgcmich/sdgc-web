@@ -11,6 +11,7 @@ create or replace function public.generate_unique_username(
 returns text
 language plpgsql
 stable
+set search_path = public
 as $$
 declare
   v_base text;
@@ -272,3 +273,4 @@ $$;
 grant execute on function public.update_member_profile(
   text, text, text, text, text, text, text, text, text, text, integer, integer, boolean, boolean, text, text, text[], text
 ) to authenticated;
+

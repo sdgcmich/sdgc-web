@@ -8,6 +8,7 @@ import { requireCapability, hasCapability } from "@/features/auth/authorization"
 import type { Database, Json } from "@/types/database";
 import { optimizeImage } from "@/lib/media/optimizer";
 import { getStorageProvider } from "@/lib/storage/provider";
+import { validateUploadFile } from "@/lib/storage/upload-security";
 import {
   DEFAULT_ABOUT_SECTIONS,
   DEFAULT_GARDEN_WALK_HIGHLIGHTS,
@@ -1230,24 +1231,39 @@ export async function uploadMediaAssetAction(
     return { success: false, error: "Alternative text is required for accessibility." };
   }
 
+  // Strictly validate uploaded media against magic bytes and security policies
+  const validation = await validateUploadFile(file, {
+    category: "image",
+    maxSizeBytes: 20 * 1024 * 1024,
+    fallbackBase: "gallery",
+  });
+
+  if (!validation.valid || !validation.sanitizedBuffer) {
+    return {
+      success: false,
+      error: validation.error || "Image file validation failed.",
+    };
+  }
+
   const supabase = await createClient();
-  const rawBuffer = Buffer.from(await file.arrayBuffer());
-  let uploadBuffer: Buffer | Uint8Array = rawBuffer;
-  let mimeType = file.type || "image/jpeg";
+  let uploadBuffer: Buffer | Uint8Array = validation.sanitizedBuffer;
+  let mimeType = validation.detectedMimeType || "image/webp";
   let width = 1200;
   let height = 800;
-  let sizeBytes = file.size;
+  let sizeBytes = validation.sizeBytes || file.size;
 
   try {
-    const optimized = await optimizeImage(rawBuffer);
+    const optimized = await optimizeImage(validation.sanitizedBuffer);
     uploadBuffer = optimized.optimizedBuffer;
     mimeType = optimized.mimeType;
     width = optimized.width;
     height = optimized.height;
     sizeBytes = optimized.sizeBytes;
   } catch (optErr) {
-    // If not a standard raster image or optimization fails, fall back to rawBuffer
-    console.warn("Image auto-optimization skipped/failed:", optErr);
+    return {
+      success: false,
+      error: `Image optimization error: ${optErr instanceof Error ? optErr.message : "processing failed"}`,
+    };
   }
 
   const fileName = `${Date.now()}-${crypto.randomUUID()}.webp`;

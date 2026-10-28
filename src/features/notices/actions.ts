@@ -5,7 +5,15 @@ import { createClient } from "@/lib/supabase/server";
 import { requireCapability } from "@/features/auth/authorization";
 import type { ActionResult } from "@/features/auth/types";
 import type { Json } from "@/types/database";
-import { type NoticeCategory, type NoticePriority, slugifyNoticeTitle } from "./types";
+import { getStorageProvider } from "@/lib/storage/provider";
+import { validateUploadFile } from "@/lib/storage/upload-security";
+import {
+  type AttachmentType,
+  type NoticeAttachment,
+  type NoticeCategory,
+  type NoticePriority,
+  slugifyNoticeTitle,
+} from "./types";
 
 // uses slugifyNoticeTitle from types
 
@@ -247,4 +255,66 @@ export async function togglePublishNoticeAction(
   revalidatePath("/admin/notices");
 
   return { success: true, data: undefined };
+}
+
+export async function uploadNoticeAttachmentAction(
+  formData: FormData,
+): Promise<ActionResult<NoticeAttachment>> {
+  await requireCapability("content.manage");
+
+  const file = formData.get("file") as File | null;
+  if (!file || !(file instanceof File) || file.size === 0) {
+    return { success: false, error: "Please select a valid file to upload." };
+  }
+
+  // Validate upload strictly with magic bytes, extension checking, and anti-polyglot scanning
+  const validation = await validateUploadFile(file, {
+    category: "all",
+    maxSizeBytes: 15 * 1024 * 1024, // 15MB maximum
+    fallbackBase: "notice-doc",
+  });
+
+  if (!validation.valid || !validation.sanitizedBuffer) {
+    return {
+      success: false,
+      error: validation.error || "File security check failed.",
+    };
+  }
+
+  try {
+    const storage = getStorageProvider();
+    const timestamp = Date.now();
+    const randomId = crypto.randomUUID().slice(0, 8);
+    const storagePath = `notices/${timestamp}-${randomId}/${validation.sanitizedFileName}`;
+
+    const uploadResult = await storage.upload({
+      bucket: "attachments",
+      path: storagePath,
+      buffer: validation.sanitizedBuffer,
+      contentType: validation.detectedMimeType || "application/octet-stream",
+    });
+
+    const isPdf = validation.detectedMimeType === "application/pdf";
+    const isImage = validation.detectedMimeType?.startsWith("image/");
+    const isDoc =
+      validation.detectedMimeType?.includes("officedocument") ||
+      validation.detectedMimeType === "text/plain";
+
+    const type: AttachmentType = isPdf ? "pdf" : isImage ? "image" : isDoc ? "doc" : "other";
+
+    return {
+      success: true,
+      data: {
+        name: validation.sanitizedFileName || file.name,
+        url: uploadResult.url,
+        type,
+        sizeBytes: validation.sizeBytes,
+      },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: `Storage upload failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+    };
+  }
 }

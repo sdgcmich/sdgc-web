@@ -21,6 +21,7 @@ import {
   deleteNoticeAction,
   togglePinNoticeAction,
   togglePublishNoticeAction,
+  uploadNoticeAttachmentAction,
 } from "../actions";
 
 interface AdminNoticesManagerProps {
@@ -50,6 +51,10 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
   const [newAttachName, setNewAttachName] = React.useState("");
   const [newAttachUrl, setNewAttachUrl] = React.useState("");
   const [newAttachType, setNewAttachType] = React.useState<AttachmentType>("pdf");
+  const [isUploadingFile, setIsUploadingFile] = React.useState(false);
+  const [uploadError, setUploadError] = React.useState<string | null>(null);
+  const [attachMode, setAttachMode] = React.useState<"upload" | "link">("upload");
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -72,6 +77,8 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
     setNewAttachName("");
     setNewAttachUrl("");
     setNewAttachType("pdf");
+    setUploadError(null);
+    setAttachMode("upload");
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -90,8 +97,36 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
     setNewAttachName("");
     setNewAttachUrl("");
     setNewAttachType("pdf");
+    setUploadError(null);
+    setAttachMode("upload");
     setFormError(null);
     setIsModalOpen(true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingFile(true);
+    setUploadError(null);
+
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await uploadNoticeAttachmentAction(fd);
+      if (res.success) {
+        setAttachments((prev) => [...prev, res.data]);
+      } else {
+        setUploadError(res.error || "File upload failed.");
+      }
+    } catch {
+      setUploadError("An unexpected error occurred during file upload.");
+    } finally {
+      setIsUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   const handleAddAttachment = () => {
@@ -536,7 +571,7 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
                       Attachments (PDFs, Images, Documents)
                     </Label>
                     <p className="text-[11px] text-muted-foreground">
-                      Attach downloadable files, event maps, or meeting minutes.
+                      Upload downloadable files, event maps, meeting minutes, or add external links.
                     </p>
                   </div>
                   {attachments.length > 0 && (
@@ -552,7 +587,7 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
                     {attachments.map((att, idx) => (
                       <div
                         key={att.url}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-2.5 text-xs"
+                        className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-2.5 text-xs shadow-2xs"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <span className="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
@@ -560,7 +595,10 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
                           </span>
                           <div className="min-w-0 truncate">
                             <p className="font-semibold text-foreground truncate">{att.name}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{att.url}</p>
+                            <p className="text-[10px] text-muted-foreground truncate font-mono">
+                              {att.sizeBytes ? `${(att.sizeBytes / 1024).toFixed(0)} KB • ` : ""}
+                              {att.url}
+                            </p>
                           </div>
                         </div>
                         <button
@@ -575,58 +613,156 @@ export function AdminNoticesManager({ initialNotices }: AdminNoticesManagerProps
                   </div>
                 )}
 
-                {/* Add new attachment row */}
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-1 border-t border-border/60">
-                  <div className="sm:col-span-5">
-                    <Input
-                      placeholder="File title (e.g. Garden Tour Map.pdf)"
-                      value={newAttachName}
-                      onChange={(e) => setNewAttachName(e.target.value)}
-                      className="text-xs h-8"
-                    />
+                {/* Attachment Mode Selector: Upload File vs Add Link */}
+                <div className="pt-2 border-t border-border/60">
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <div className="flex rounded-lg border border-border bg-muted/40 p-0.5 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAttachMode("upload");
+                          setUploadError(null);
+                        }}
+                        className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+                          attachMode === "upload"
+                            ? "bg-background text-foreground shadow-2xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Upload File
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAttachMode("link");
+                          setUploadError(null);
+                        }}
+                        className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+                          attachMode === "link"
+                            ? "bg-background text-foreground shadow-2xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Add URL Link
+                      </button>
+                    </div>
+
+                    <span className="text-[10px] text-muted-foreground">
+                      Scanned &bull; Max 15MB
+                    </span>
                   </div>
-                  <div className="sm:col-span-4">
-                    <Input
-                      placeholder="URL or file link (https://...)"
-                      value={newAttachUrl}
-                      onChange={(e) => {
-                        setNewAttachUrl(e.target.value);
-                        if (!newAttachName) {
-                          const parts = e.target.value.split("/");
-                          const last = parts[parts.length - 1];
-                          if (last?.includes(".")) {
-                            setNewAttachName(decodeURIComponent(last));
-                          }
-                        }
-                      }}
-                      className="text-xs h-8"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <select
-                      value={newAttachType}
-                      onChange={(e) => setNewAttachType(e.target.value as AttachmentType)}
-                      aria-label="File format"
-                      className="w-full h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value="pdf">PDF</option>
-                      <option value="image">Image</option>
-                      <option value="doc">Document</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div className="sm:col-span-1 flex items-center">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleAddAttachment}
-                      disabled={!newAttachUrl.trim()}
-                      className="w-full h-8 text-xs font-semibold px-2"
-                    >
-                      + Add
-                    </Button>
-                  </div>
+
+                  {attachMode === "upload" ? (
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.txt"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+
+                      <button
+                        type="button"
+                        disabled={isUploadingFile}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`w-full flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-xl transition-colors text-center cursor-pointer ${
+                          isUploadingFile
+                            ? "border-primary/50 bg-primary/5 cursor-wait"
+                            : "border-border/80 hover:border-primary/50 hover:bg-muted/40 bg-card/50"
+                        }`}
+                      >
+                        {isUploadingFile ? (
+                          <div className="flex items-center gap-2 text-xs font-semibold text-primary py-1">
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            <span>Scanning and securely uploading file...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                              <svg
+                                className="h-4 w-4 text-primary"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="2"
+                                stroke="currentColor"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+                                />
+                              </svg>
+                              <span>Click to browse and upload file</span>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              Supports PDF, Word (DOCX), PNG, JPEG, WebP, Text (up to 15MB)
+                            </p>
+                          </>
+                        )}
+                      </button>
+
+                      {uploadError && (
+                        <p className="text-xs text-destructive font-medium mt-1.5" role="alert">
+                          {uploadError}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                      <div className="sm:col-span-5">
+                        <Input
+                          placeholder="File title (e.g. Garden Tour Map.pdf)"
+                          value={newAttachName}
+                          onChange={(e) => setNewAttachName(e.target.value)}
+                          className="text-xs h-8"
+                        />
+                      </div>
+                      <div className="sm:col-span-4">
+                        <Input
+                          placeholder="URL or file link (https://...)"
+                          value={newAttachUrl}
+                          onChange={(e) => {
+                            setNewAttachUrl(e.target.value);
+                            if (!newAttachName) {
+                              const parts = e.target.value.split("/");
+                              const last = parts[parts.length - 1];
+                              if (last?.includes(".")) {
+                                setNewAttachName(decodeURIComponent(last));
+                              }
+                            }
+                          }}
+                          className="text-xs h-8"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <select
+                          value={newAttachType}
+                          onChange={(e) => setNewAttachType(e.target.value as AttachmentType)}
+                          aria-label="File format"
+                          className="w-full h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="pdf">PDF</option>
+                          <option value="image">Image</option>
+                          <option value="doc">Document</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                      <div className="sm:col-span-1 flex items-center">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleAddAttachment}
+                          disabled={!newAttachUrl.trim()}
+                          className="w-full h-8 text-xs font-semibold px-2"
+                        >
+                          + Add
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
