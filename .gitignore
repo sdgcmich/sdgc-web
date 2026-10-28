@@ -17,6 +17,7 @@ next-env.d.ts
 supabase/.temp/
 supabase/.branches/
 supabase/.env*
+supabase/temp_*
 
 # Browser reports and private migration inputs
 /playwright-report/
