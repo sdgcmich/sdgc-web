@@ -40,7 +40,10 @@ begin
       return v_candidate;
     end if;
     v_counter := v_counter + 1;
+    exit when v_counter > 10000;
   end loop;
+
+  return v_base || '_' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 6);
 end;
 $$;
 
