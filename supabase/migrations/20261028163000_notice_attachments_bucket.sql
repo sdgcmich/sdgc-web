@@ -47,3 +47,4 @@ create policy "attachments_staff_delete" on storage.objects
       or public.has_capability('roles.admin')
     )
   );
+

@@ -10,7 +10,7 @@ create or replace function public.generate_unique_username(
 )
 returns text
 language plpgsql
-stable
+volatile
 set search_path = public
 as $$
 declare
