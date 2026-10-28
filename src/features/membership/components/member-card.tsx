@@ -58,100 +58,98 @@ export function MemberCard({ profile }: MemberCardProps) {
         </button>
       </div>
 
-      {/* Printable Botanical Member Card */}
-      <div className="flex justify-center">
+      {/* Printable Botanical Member Card (CR80 Standard Size: 3.375" × 2.125" / 85.6 × 54 mm) */}
+      <div className="flex justify-center overflow-x-auto py-2">
         <div
           id="sdgc-printable-member-card"
-          className="w-full max-w-md rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 p-6 shadow-md relative overflow-hidden text-foreground"
+          className="w-[3.375in] h-[2.125in] min-w-[3.375in] min-h-[2.125in] max-w-[3.375in] max-h-[2.125in] rounded-xl border-2 border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 p-2.5 shadow-md relative overflow-hidden text-foreground flex flex-col justify-between box-border select-none"
+          style={{ width: "3.375in", height: "2.125in" }}
         >
           {/* Subtle botanical watermarked logo */}
-          <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none select-none">
+          <div className="absolute -right-6 -bottom-6 opacity-10 pointer-events-none select-none">
             <Image
               src={resolveMediaUrl("/images/brand/sdgc-logo.jpg")}
               alt=""
-              width={180}
-              height={180}
+              width={120}
+              height={120}
               className="rounded-full"
             />
           </div>
 
-          <div className="relative space-y-5">
-            {/* Card Header */}
-            <div className="flex items-center justify-between border-b border-border/80 pb-4">
-              <div className="flex items-center gap-3">
-                <Image
-                  src={resolveMediaUrl("/images/brand/sdgc-logo.jpg")}
-                  alt="SDGC Seal"
-                  width={40}
-                  height={40}
-                  className="rounded-full border border-border/80 object-cover"
-                />
-                <div>
-                  <h3 className="font-serif text-base font-bold text-foreground leading-tight">
-                    Saugatuck Douglas Garden Club
-                  </h3>
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block">
-                    Established 1928 &bull; 501(c)(3)
-                  </span>
-                </div>
-              </div>
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
-                Active Member
+          {/* Card Header (Centered) */}
+          <div className="flex items-center justify-center gap-2 border-b border-border/70 pb-1.5 text-center relative z-10">
+            <Image
+              src={resolveMediaUrl("/images/brand/sdgc-logo.jpg")}
+              alt="SDGC Seal"
+              width={26}
+              height={26}
+              className="rounded-full border border-border/80 object-cover shrink-0"
+            />
+            <div className="text-center">
+              <h3 className="font-serif text-[11px] font-bold text-foreground leading-none">
+                Saugatuck Douglas Garden Club
+              </h3>
+              <span className="text-[7.5px] uppercase font-bold tracking-wider text-muted-foreground block mt-0.5">
+                Established 1928 &bull; 501(c)(3)
               </span>
             </div>
+          </div>
 
-            {/* Member Identity */}
-            <div className="space-y-1">
-              <div className="text-xl sm:text-2xl font-serif font-bold text-foreground">
-                {profile.firstName} {profile.lastName}
+          {/* Member Identity */}
+          <div className="space-y-0.5 relative z-10">
+            <div className="text-[15px] font-serif font-bold text-foreground leading-tight truncate">
+              {profile.firstName} {profile.lastName}
+            </div>
+            <div className="flex items-center gap-1.5 text-[8.5px] text-muted-foreground leading-none">
+              <span className="font-mono">@{profile.username}</span>
+              {profile.city && (
+                <span>
+                  &bull; {profile.city}, {profile.state || "MI"}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Credential Info & Verification QR */}
+          <div className="flex items-end justify-between gap-2 pt-1 border-t border-border/60 relative z-10">
+            <div className="space-y-1 flex-1 min-w-0">
+              <div>
+                <span className="text-[7px] font-bold uppercase tracking-wider text-muted-foreground block leading-none">
+                  Valid Term
+                </span>
+                <span className="font-semibold text-foreground text-[9px] block leading-tight">
+                  {membershipTerm}
+                </span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="font-mono">@{profile.username}</span>
-                {profile.city && (
-                  <span>
-                    &bull; {profile.city}, {profile.state || "MI"}
+              <div>
+                <span className="text-[7px] font-bold uppercase tracking-wider text-muted-foreground block leading-none">
+                  Member ID
+                </span>
+                <span className="font-mono font-bold text-foreground text-[8.5px] block leading-tight">
+                  {memberCode}
+                </span>
+              </div>
+              {profile.masterGardener && (
+                <div>
+                  <span className="inline-flex items-center gap-1 rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[7.5px] font-bold text-primary leading-none">
+                    🌱 Master Gardener
                   </span>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Badges, Credential Info & Verification QR */}
-            <div className="flex items-center justify-between gap-4 pt-3 text-xs border-t border-border/60">
-              <div className="space-y-2.5 flex-1">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                    Valid Term
-                  </span>
-                  <span className="font-semibold text-foreground">{membershipTerm}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                    Member ID
-                  </span>
-                  <span className="font-mono font-bold text-foreground text-[11px] block">
-                    {memberCode}
-                  </span>
-                </div>
-                {profile.masterGardener && (
-                  <div>
-                    <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-bold text-primary">
-                      🌱 Master Gardener
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="shrink-0 text-center">
-                <QRCodeDisplay
-                  value={
-                    typeof window !== "undefined"
-                      ? `${window.location.origin}/verify/member/${memberCode}`
-                      : `https://saugatuckdouglasgardenclub.org/verify/member/${memberCode}`
-                  }
-                  size={78}
-                  label="Scan to Verify"
-                />
-              </div>
+            <div className="shrink-0 text-center">
+              <QRCodeDisplay
+                value={
+                  typeof window !== "undefined"
+                    ? `${window.location.origin}/verify/member/${memberCode}`
+                    : `https://saugatuckdouglasgardenclub.org/verify/member/${memberCode}`
+                }
+                size={44}
+                className="!p-1 !rounded-lg border-border/60"
+                label="Scan to Verify"
+                labelClassName="mt-0.5 text-[6.5px] font-mono font-medium tracking-tight text-slate-600 block leading-none"
+              />
             </div>
           </div>
         </div>

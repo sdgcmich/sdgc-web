@@ -237,10 +237,16 @@
     min-height: auto;
   }
 
-  /* Optimize card and receipt presentation on printed page */
+  /* Optimize card and receipt presentation on printed page (CR80 Standard Size: 3.375" x 2.125" / 85.6 x 54 mm) */
   #sdgc-printable-member-card {
-    width: 100%;
-    max-width: 440px;
+    width: 3.375in;
+    height: 2.125in;
+    min-width: 3.375in;
+    min-height: 2.125in;
+    max-width: 3.375in;
+    max-height: 2.125in;
+    box-sizing: border-box;
+    overflow: hidden;
     margin: 20px auto;
     box-shadow: none;
     page-break-inside: avoid;

@@ -73,10 +73,18 @@ export function printElement(elementId: string, pageTitle?: string): void {
         display: none !important;
       }
       #sdgc-printable-member-card {
-        width: 100% !important;
-        max-width: 440px !important;
+        width: 3.375in !important;
+        height: 2.125in !important;
+        min-width: 3.375in !important;
+        min-height: 2.125in !important;
+        max-width: 3.375in !important;
+        max-height: 2.125in !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
         margin: 0 auto !important;
         box-shadow: none !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
       #ticket-receipt {
         width: 100% !important;

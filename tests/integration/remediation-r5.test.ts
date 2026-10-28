@@ -151,7 +151,7 @@ describe("Remediation Package R5 — Legacy Routes, Ticketing & Importer Reconci
       );
       expect(gardenWalk).toBeDefined();
       expect(gardenWalk?.advancePriceCents).toBe(1500); // $15.00
-      expect(gardenWalk?.dayOfPriceCents).toBe(2000); // $20.00
+      expect(gardenWalk?.dayOfPriceCents).toBe(1500); // $15.00 (no automatic unapproved markup)
     });
 
     it("processes ticket orders with order reference and check-in instructions", async () => {

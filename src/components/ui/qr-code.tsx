@@ -8,6 +8,7 @@ interface QRCodeDisplayProps {
   size?: number;
   className?: string;
   label?: string;
+  labelClassName?: string;
   showCardBackground?: boolean;
 }
 
@@ -16,6 +17,7 @@ export function QRCodeDisplay({
   size = 140,
   className = "",
   label,
+  labelClassName,
   showCardBackground = true,
 }: QRCodeDisplayProps) {
   const svgHtml = useMemo(() => {
@@ -42,7 +44,12 @@ export function QRCodeDisplay({
         dangerouslySetInnerHTML={{ __html: svgHtml }}
       />
       {label && (
-        <span className="mt-2 text-[10px] font-mono font-medium tracking-tight text-slate-600 select-all">
+        <span
+          className={
+            labelClassName ||
+            "mt-2 text-[10px] font-mono font-medium tracking-tight text-slate-600 select-all"
+          }
+        >
           {label}
         </span>
       )}

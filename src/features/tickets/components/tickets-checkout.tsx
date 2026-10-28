@@ -94,12 +94,12 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
   }, [sessionId, orderRef, isSuccess, confirmedOrder]);
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) || events[0];
-  const unitPrice = selectedEvent ? selectedEvent.advancePriceCents / 100 : 20;
+  const unitPrice = selectedEvent ? selectedEvent.advancePriceCents / 100 : 15;
   const studentPrice = selectedEvent?.studentPriceCents
     ? selectedEvent.studentPriceCents / 100
     : 10;
   const childPrice = selectedEvent?.childPriceCents ? selectedEvent.childPriceCents / 100 : 0;
-  const dayOfPrice = selectedEvent ? selectedEvent.dayOfPriceCents / 100 : 25;
+  const dayOfPrice = selectedEvent ? selectedEvent.dayOfPriceCents / 100 : unitPrice;
 
   const totalAdmissions = quantity + studentQuantity + childQuantity;
   const adultSubtotalCents = quantity * (selectedEvent ? selectedEvent.advancePriceCents : 2000);
@@ -635,7 +635,9 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
                   General Admission (Adult)
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  ${unitPrice.toFixed(2)} advance (${dayOfPrice.toFixed(2)} day-of)
+                  {dayOfPrice > unitPrice
+                    ? `$${unitPrice.toFixed(2)} advance ($${dayOfPrice.toFixed(2)} day-of)`
+                    : `$${unitPrice.toFixed(2)} per ticket`}
                 </div>
               </div>
               <div className="flex items-center rounded-xl border border-border bg-card p-0.5 shrink-0">
@@ -751,7 +753,7 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
                 onChange={(e) =>
                   setCouponInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))
                 }
-                placeholder="e.g. GARDEN20, EARLYBIRD"
+                placeholder="e.g. GARDEN20, WELCOME10"
                 disabled={Boolean(appliedCoupon)}
                 className="flex-1 rounded-2xl border border-border bg-card px-4 py-3 text-xs font-mono uppercase tracking-wider text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60"
               />

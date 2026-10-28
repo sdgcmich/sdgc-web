@@ -88,7 +88,7 @@ export async function getTicketEvents(): Promise<TicketEvent[]> {
           }),
           location,
           advancePriceCents: advancePrice,
-          dayOfPriceCents: advancePrice + 500,
+          dayOfPriceCents: advancePrice,
           studentPriceCents: studentPrice,
           childPriceCents: childPrice,
           requiresTickets: Boolean(row.requires_tickets),
