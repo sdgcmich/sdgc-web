@@ -183,6 +183,11 @@ end;
 $$;
 
 -- 3. Update public.update_member_profile to allow updating username handle
+-- Drop previous 17-argument overload to avoid PostgREST PGRST203 function ambiguity
+drop function if exists public.update_member_profile(
+  text, text, text, text, text, text, text, text, text, text, integer, integer, boolean, boolean, text, text, text[]
+);
+
 create or replace function public.update_member_profile(
   p_first_name text,
   p_last_name text,

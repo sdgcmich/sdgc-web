@@ -518,8 +518,6 @@ isOneToOne: false
             }[]
                            },
 "update_member_profile":
-{ Args: { "p_address_line1"?: string,"p_address_line2"?: string,"p_birth_day"?: number,"p_birth_month"?: number,"p_city"?: string,"p_directory_opt_out"?: boolean,"p_first_name": string,"p_gardening_interests"?: string,"p_is_master_gardener"?: boolean,"p_last_name": string,"p_phone"?: string,"p_postal_code"?: string,"p_project_interests"?: (string)[],"p_secondary_phone"?: string,"p_spouse_name"?: string,"p_state"?: string,"p_volunteer_experience"?: string }; Returns: undefined
-                           } |
 { Args: { "p_address_line1"?: string,"p_address_line2"?: string,"p_birth_day"?: number,"p_birth_month"?: number,"p_city"?: string,"p_directory_opt_out"?: boolean,"p_first_name": string,"p_gardening_interests"?: string,"p_is_master_gardener"?: boolean,"p_last_name": string,"p_phone"?: string,"p_postal_code"?: string,"p_project_interests"?: (string)[],"p_secondary_phone"?: string,"p_spouse_name"?: string,"p_state"?: string,"p_username"?: string,"p_volunteer_experience"?: string }; Returns: undefined
                            },
 "update_membership_term":
