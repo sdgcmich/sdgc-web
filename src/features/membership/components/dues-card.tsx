@@ -399,7 +399,7 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
               <h3 className="font-serif text-xl font-bold text-foreground">
                 {membership.paymentMethod === "check"
                   ? "Check Received &bull; Awaiting Clearance"
-                  : "Card Checkout In Progress"}
+                  : "Payment In Progress / Awaiting Clearance"}
               </h3>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 {membership.paymentMethod === "check"

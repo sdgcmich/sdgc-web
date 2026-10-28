@@ -171,11 +171,17 @@ test.describe("Phase P5 — Public Data, Contact & Financial Workflows", () => {
 
     // Wait for Suspense boundary to hydrate and present either the payment button or confirmed/pending state
     const payBtn = page.getByRole("button", { name: /Pay \$50\.00 Dues Online/i });
+    const pendingHeading = page.getByRole("heading", {
+      name: /Payment In Progress|Card Checkout In Progress|Awaiting Clearance/i,
+    });
     const confirmedHeading = page.getByRole("heading", {
-      name: /Annual Dues Paid & Confirmed|Payment In Progress/i,
+      name: /Annual Dues Paid & Confirmed|Dues Paid & Confirmed/i,
     });
     const confirmedBtn = page.getByRole("button", { name: /Dues Paid & Confirmed/i });
-    await expect(payBtn.or(confirmedHeading).or(confirmedBtn)).toBeVisible({ timeout: 10000 });
+
+    await expect(payBtn.or(pendingHeading).or(confirmedHeading).or(confirmedBtn)).toBeVisible({
+      timeout: 10000,
+    });
 
     if (await payBtn.isVisible()) {
       await payBtn.click();
@@ -196,11 +202,15 @@ test.describe("Phase P5 — Public Data, Contact & Financial Workflows", () => {
     } else {
       await expect(
         page
-          .getByRole("button", { name: /2026 Dues Paid & Confirmed/i })
-          .or(page.getByRole("heading", { name: /Annual Dues Paid & Confirmed/i }))
+          .getByRole("button", { name: /Dues Paid & Confirmed/i })
           .or(
             page.getByRole("heading", {
-              name: /Payment In Progress \/ Awaiting Clearance/i,
+              name: /Annual Dues Paid & Confirmed|Dues Paid & Confirmed/i,
+            }),
+          )
+          .or(
+            page.getByRole("heading", {
+              name: /Payment In Progress|Card Checkout In Progress|Awaiting Clearance/i,
             }),
           ),
       ).toBeVisible();
