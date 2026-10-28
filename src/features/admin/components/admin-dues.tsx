@@ -6,24 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { formatDetroitDateTimeLocal, parseDetroitDateTimeLocal } from "@/features/events/calendar";
-import type {
-  AdminDuesRecord,
-  AdminTermRecord,
-  DisbursementRecord,
-  FinancialLedgerSummary,
-} from "../types";
+import type { AdminDuesRecord, AdminTermRecord, FinancialLedgerSummary } from "../types";
 import {
   createMembershipTermAction,
   reconcilePaymentAction,
   updateMembershipTermAction,
-  createDisbursementAction,
-  deleteDisbursementAction,
 } from "../actions";
 
 interface AdminDuesProps {
   initialRecords: AdminDuesRecord[];
   initialTerms?: AdminTermRecord[];
-  initialDisbursements?: DisbursementRecord[];
   initialSummary?: FinancialLedgerSummary;
   initialStatusFilter?: string;
 }
@@ -48,33 +40,15 @@ function formatInclusiveTermDates(opensAt: string, closesAt: string): string {
   }
 }
 
-const DISBURSEMENT_CATEGORIES = [
-  "Garden Walk Supplies & Signage",
-  "Downtown Civic Urns & Flowers",
-  "Public Library & Hilltop Gardens",
-  "Senior & Youth Workshops",
-  "Guest Speaker Honorarium",
-  "Administrative, PO Box & Postage",
-  "Website & Online Services",
-  "Insurance & Regulatory Filing",
-  "Charitable Community Grants",
-  "Miscellaneous Expense",
-];
-
 export function AdminDues({
   initialRecords,
   initialTerms = [],
-  initialDisbursements = [],
   initialSummary,
   initialStatusFilter,
 }: AdminDuesProps) {
-  const [activeTab, setActiveTab] = React.useState<"overview" | "dues" | "withdrawals" | "terms">(
-    "overview",
-  );
+  const [activeTab, setActiveTab] = React.useState<"overview" | "dues" | "terms">("overview");
   const [records, setRecords] = React.useState<AdminDuesRecord[]>(initialRecords);
   const [terms, setTerms] = React.useState<AdminTermRecord[]>(initialTerms);
-  const [disbursements, setDisbursements] =
-    React.useState<DisbursementRecord[]>(initialDisbursements);
   const [summary, setSummary] = React.useState<FinancialLedgerSummary | undefined>(initialSummary);
 
   const [statusFilter, setStatusFilter] = React.useState<string>(initialStatusFilter || "all");
@@ -88,10 +62,6 @@ export function AdminDues({
   // Pagination for Dues
   const [duesPage, setDuesPage] = React.useState(1);
   const [duesPageSize, setDuesPageSize] = React.useState(10);
-
-  // Pagination for Disbursements
-  const [disbPage, setDisbPage] = React.useState(1);
-  const [disbPageSize, setDisbPageSize] = React.useState(10);
 
   // Term editing & deadline extension modal state
   const [editingTerm, setEditingTerm] = React.useState<AdminTermRecord | null>(null);
@@ -110,17 +80,6 @@ export function AdminDues({
     `${new Date().getFullYear() + 1}-12-31T23:59`,
   );
 
-  // Record Disbursement / Withdrawal Modal State
-  const [isRecordingDisbursement, setIsRecordingDisbursement] = React.useState(false);
-  const [disbAmountDollars, setDisbAmountDollars] = React.useState<string>("");
-  const [disbCategory, setDisbCategory] = React.useState<string>(
-    DISBURSEMENT_CATEGORIES[0] || "Garden Walk Supplies & Signage",
-  );
-  const [disbPayee, setDisbPayee] = React.useState<string>("");
-  const [disbDescription, setDisbDescription] = React.useState<string>("");
-  const [disbRef, setDisbRef] = React.useState<string>("");
-  const [disbDate, setDisbDate] = React.useState<string>(new Date().toISOString().slice(0, 10));
-
   React.useEffect(() => {
     setRecords(initialRecords);
   }, [initialRecords]);
@@ -128,10 +87,6 @@ export function AdminDues({
   React.useEffect(() => {
     setTerms(initialTerms);
   }, [initialTerms]);
-
-  React.useEffect(() => {
-    setDisbursements(initialDisbursements);
-  }, [initialDisbursements]);
 
   React.useEffect(() => {
     setSummary(initialSummary);
@@ -283,103 +238,6 @@ export function AdminDues({
     }
   };
 
-  const handleCreateDisbursement = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setIsError(false);
-    try {
-      const res = await createDisbursementAction({
-        amountDollars: disbAmountDollars,
-        category: disbCategory,
-        payee: disbPayee,
-        description: disbDescription,
-        referenceNumber: disbRef,
-        disbursedAt: disbDate ? `${disbDate}T12:00:00Z` : undefined,
-      });
-
-      if (res.success && res.data) {
-        const amountCents = Math.round(parseFloat(disbAmountDollars) * 100);
-        const newRecord: DisbursementRecord = {
-          id: res.data.id,
-          amountCents,
-          category: disbCategory,
-          payee: disbPayee,
-          description: disbDescription,
-          referenceNumber: disbRef || undefined,
-          disbursedAt: disbDate ? `${disbDate}T12:00:00Z` : new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-        };
-
-        setDisbursements((prev) => [newRecord, ...prev]);
-        setSummary((prev) => {
-          if (!prev) return prev;
-          const nextDisbursed = prev.totalDisbursedCents + amountCents;
-          return {
-            ...prev,
-            totalDisbursedCents: nextDisbursed,
-            disbursementCount: prev.disbursementCount + 1,
-            netAvailableBalanceCents: prev.totalGrossRevenueCents - nextDisbursed,
-          };
-        });
-
-        setNotice(
-          `Withdrawal of $${parseFloat(disbAmountDollars).toFixed(2)} to "${disbPayee}" recorded.`,
-        );
-        setIsRecordingDisbursement(false);
-        setDisbAmountDollars("");
-        setDisbPayee("");
-        setDisbDescription("");
-        setDisbRef("");
-      } else {
-        setIsError(true);
-        setNotice(`Could not record withdrawal: ${res.error}`);
-      }
-    } catch (err: unknown) {
-      setIsError(true);
-      setNotice(err instanceof Error ? err.message : "An unexpected error occurred");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeleteDisbursement = async (id: string, payee: string, amountCents: number) => {
-    if (
-      !confirm(
-        `Are you sure you want to remove the withdrawal record for "${payee}" ($${(amountCents / 100).toFixed(2)})?`,
-      )
-    ) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setIsError(false);
-    try {
-      const res = await deleteDisbursementAction(id);
-      if (res.success) {
-        setDisbursements((prev) => prev.filter((d) => d.id !== id));
-        setSummary((prev) => {
-          if (!prev) return prev;
-          const nextDisbursed = Math.max(0, prev.totalDisbursedCents - amountCents);
-          return {
-            ...prev,
-            totalDisbursedCents: nextDisbursed,
-            disbursementCount: Math.max(0, prev.disbursementCount - 1),
-            netAvailableBalanceCents: prev.totalGrossRevenueCents - nextDisbursed,
-          };
-        });
-        setNotice("Withdrawal record removed from accounting books.");
-      } else {
-        setIsError(true);
-        setNotice(`Could not delete record: ${res.error}`);
-      }
-    } catch (err: unknown) {
-      setIsError(true);
-      setNotice(err instanceof Error ? err.message : "An unexpected error occurred");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const filteredRecords = React.useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return records.filter((r) => {
@@ -405,18 +263,10 @@ export function AdminDues({
     return filteredRecords.slice(start, start + duesPageSize);
   }, [filteredRecords, duesPage, duesPageSize]);
 
-  const paginatedDisbursements = React.useMemo(() => {
-    const start = (disbPage - 1) * disbPageSize;
-    return disbursements.slice(start, start + disbPageSize);
-  }, [disbursements, disbPage, disbPageSize]);
-
   // Derived Financial Calculations if summary is not loaded
   const calcGrossRevenue =
     summary?.totalGrossRevenueCents ??
     records.filter((r) => r.status === "confirmed").reduce((acc, r) => acc + r.amountCents, 0);
-  const calcTotalDisbursed =
-    summary?.totalDisbursedCents ?? disbursements.reduce((acc, d) => acc + d.amountCents, 0);
-  const calcNetBalance = summary?.netAvailableBalanceCents ?? calcGrossRevenue - calcTotalDisbursed;
 
   return (
     <div className="space-y-6">
@@ -427,20 +277,12 @@ export function AdminDues({
             Dues Reconciliation & Financials
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Full club treasury books: count revenues across membership dues and Garden Walk
-            admissions, record asset withdrawals and disbursements, and reconcile paper checks.
+            Full club treasury books: track revenues across membership dues and Garden Walk
+            admissions, reconcile paper checks, and configure membership terms.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsRecordingDisbursement(true)}
-            className="rounded-xl shadow-2xs"
-          >
-            + Record Withdrawal
-          </Button>
           <Button
             type="button"
             onClick={() => setIsCreatingTerm(true)}
@@ -480,9 +322,8 @@ export function AdminDues({
       {/* Top Navigation Tabs */}
       <div className="flex border-b border-border/60 overflow-x-auto no-scrollbar gap-2 sm:gap-6">
         {[
-          { id: "overview", label: "Accounting Overview & Books" },
+          { id: "overview", label: "Accounting Overview & Summary" },
           { id: "dues", label: `Dues Payment Journal (${records.length})` },
-          { id: "withdrawals", label: `Withdrawals & Expenses (${disbursements.length})` },
           { id: "terms", label: `Annual Terms (${terms.length})` },
         ].map((tab) => (
           <button
@@ -532,106 +373,108 @@ export function AdminDues({
 
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs space-y-2">
               <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Total Withdrawals &amp; Expenses
+                Membership Dues Revenue
               </span>
-              <p className="text-3xl font-bold font-serif text-amber-600 dark:text-amber-400">
-                ${(calcTotalDisbursed / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              <p className="text-3xl font-bold font-serif text-emerald-600 dark:text-emerald-400">
+                $
+                {((summary?.totalDuesRevenueCents ?? 0) / 100).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                })}
               </p>
               <div className="text-xs text-muted-foreground pt-1 border-t border-border/40">
                 <p>
-                  • Disbursements recorded:{" "}
-                  <span className="font-semibold text-foreground">{disbursements.length}</span>{" "}
-                  entries
+                  • Payments recorded:{" "}
+                  <span className="font-semibold text-foreground">
+                    {summary?.duesPaymentCount ?? records.length}
+                  </span>{" "}
+                  transactions
                 </p>
                 <p className="text-[11px] text-muted-foreground/80 mt-0.5">
-                  Supplies, beautification urns, workshops &amp; honoraria
+                  Annual membership fees for SDGC active members
                 </p>
               </div>
             </div>
 
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs space-y-2">
               <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Net Available Treasury Balance
+                Garden Walk Admissions
               </span>
-              <p
-                className={`text-3xl font-bold font-serif ${
-                  calcNetBalance >= 0
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-rose-600 dark:text-rose-400"
-                }`}
-              >
-                ${(calcNetBalance / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              <p className="text-3xl font-bold font-serif text-primary">
+                $
+                {((summary?.totalTicketRevenueCents ?? 0) / 100).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                })}
               </p>
               <div className="text-xs text-muted-foreground pt-1 border-t border-border/40">
                 <p>
-                  • Status:{" "}
+                  • Admissions issued:{" "}
                   <span className="font-semibold text-foreground">
-                    {calcNetBalance >= 0 ? "Solvent / Surplus" : "Deficit"}
-                  </span>
+                    {summary?.totalTicketsSold ?? 0}
+                  </span>{" "}
+                  tickets
                 </p>
                 <p className="text-[11px] text-muted-foreground/80 mt-0.5">
-                  Available for upcoming civic plantings &amp; projects
+                  Public tour admissions and digital garden passes
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Quick Overview of Recent Withdrawals & Actions */}
+          {/* Quick Overview Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-serif text-lg font-bold text-foreground">
-                  Recent Withdrawals from Assets
+                  Check Reconciliation Status
                 </h3>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setActiveTab("withdrawals")}
+                  onClick={() => {
+                    setStatusFilter("pending");
+                    setActiveTab("dues");
+                  }}
                   className="text-xs"
                 >
-                  View All &rarr;
+                  Review Pending &rarr;
                 </Button>
               </div>
 
-              {disbursements.length === 0 ? (
-                <div className="p-8 text-center text-xs text-muted-foreground border border-dashed border-border rounded-xl">
-                  <p className="font-semibold text-sm">No withdrawals recorded yet.</p>
-                  <p className="mt-1">
-                    Click "+ Record Withdrawal" to log supply purchases, equipment, or contractor
-                    fees.
-                  </p>
-                  <Button
-                    size="sm"
-                    onClick={() => setIsRecordingDisbursement(true)}
-                    className="mt-3 text-xs"
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-muted/20">
+                  <div>
+                    <span className="font-semibold text-foreground block">
+                      Awaiting Clearance (Mail-in Checks)
+                    </span>
+                    <span className="text-muted-foreground text-[11px]">
+                      Offline check payments submitted by members pending treasurer clearance
+                    </span>
+                  </div>
+                  <Badge
+                    variant={
+                      records.filter((r) => r.status === "pending").length > 0
+                        ? "warning"
+                        : "secondary"
+                    }
                   >
-                    + Record First Withdrawal
-                  </Button>
+                    {records.filter((r) => r.status === "pending").length} pending
+                  </Badge>
                 </div>
-              ) : (
-                <div className="divide-y divide-border/60 text-xs">
-                  {disbursements.slice(0, 5).map((d) => (
-                    <div key={d.id} className="py-2.5 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <span className="font-semibold text-foreground block truncate">
-                          {d.payee}
-                        </span>
-                        <span className="text-muted-foreground text-[11px] truncate block">
-                          {d.category} • {d.description}
-                        </span>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className="font-bold text-foreground block">
-                          ${(d.amountCents / 100).toFixed(2)}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {new Date(d.disbursedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-muted/20">
+                  <div>
+                    <span className="font-semibold text-foreground block">
+                      Confirmed &amp; Cleared Payments
+                    </span>
+                    <span className="text-muted-foreground text-[11px]">
+                      Stripe card payments and cleared check records in current term
+                    </span>
+                  </div>
+                  <Badge variant="success">
+                    {records.filter((r) => r.status === "confirmed").length} confirmed
+                  </Badge>
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs space-y-4">
@@ -858,104 +701,7 @@ export function AdminDues({
         </div>
       )}
 
-      {/* TAB 3: WITHDRAWALS & EXPENSES */}
-      {activeTab === "withdrawals" && (
-        <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden space-y-0">
-          <div className="p-4 border-b border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span className="font-semibold text-sm text-foreground">
-                Withdrawals &amp; Asset Disbursements Journal ({disbursements.length} entries)
-              </span>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Official treasurer log of funds withdrawn from dues, tickets, and website assets for
-                club operations.
-              </p>
-            </div>
-            <Button
-              type="button"
-              onClick={() => setIsRecordingDisbursement(true)}
-              className="text-xs rounded-xl shadow-2xs shrink-0"
-            >
-              + Record Withdrawal
-            </Button>
-          </div>
-
-          <div className="overflow-x-auto overscroll-x-contain">
-            <table className="w-full text-left text-sm min-w-[750px]">
-              <thead className="border-b border-border bg-muted/50 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="p-4">Disbursed Date</th>
-                  <th className="p-4">Payee / Recipient</th>
-                  <th className="p-4">Category</th>
-                  <th className="p-4">Description &amp; Reference</th>
-                  <th className="p-4 text-right">Amount Withdrawn</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {paginatedDisbursements.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground text-xs">
-                      No withdrawals recorded in the accounting books yet.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedDisbursements.map((d) => (
-                    <tr key={d.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="p-4 text-xs font-mono text-foreground whitespace-nowrap">
-                        {new Date(d.disbursedAt).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </td>
-                      <td className="p-4 font-semibold text-foreground">{d.payee}</td>
-                      <td className="p-4">
-                        <Badge variant="secondary" className="text-[11px] font-medium">
-                          {d.category}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-xs">
-                        <p className="text-foreground">{d.description}</p>
-                        {d.referenceNumber && (
-                          <span className="text-[11px] font-mono text-muted-foreground">
-                            Ref / Check #: {d.referenceNumber}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4 text-right font-bold text-amber-600 dark:text-amber-400 font-mono">
-                        ${(d.amountCents / 100).toFixed(2)}
-                      </td>
-                      <td className="p-4 text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDeleteDisbursement(d.id, d.payee, d.amountCents)}
-                          className="text-xs text-destructive hover:bg-destructive/10"
-                        >
-                          Remove
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <PaginationBar
-            currentPage={disbPage}
-            totalItems={disbursements.length}
-            pageSize={disbPageSize}
-            onPageChange={setDisbPage}
-            onPageSizeChange={setDisbPageSize}
-            pageSizeOptions={[10, 25, 50]}
-            itemLabel="withdrawals"
-          />
-        </div>
-      )}
-
-      {/* TAB 4: ANNUAL TERMS CONFIG */}
+      {/* TAB 3: ANNUAL TERMS CONFIG */}
       {activeTab === "terms" && (
         <div className="space-y-6">
           <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
@@ -1013,145 +759,6 @@ export function AdminDues({
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Record New Withdrawal Modal */}
-      {isRecordingDisbursement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="font-serif text-xl font-bold text-foreground">
-              Record Asset Withdrawal / Disbursement
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Note down funds withdrawn from club dues and ticket assets to maintain clear
-              accounting books.
-            </p>
-
-            <form onSubmit={handleCreateDisbursement} className="space-y-4 pt-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="disb-amount"
-                    className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1"
-                  >
-                    Withdrawal Amount ($ USD) *
-                  </label>
-                  <Input
-                    id="disb-amount"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    required
-                    placeholder="e.g. 150.00"
-                    value={disbAmountDollars}
-                    onChange={(e) => setDisbAmountDollars(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="disb-date"
-                    className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1"
-                  >
-                    Date of Withdrawal *
-                  </label>
-                  <Input
-                    id="disb-date"
-                    type="date"
-                    required
-                    value={disbDate}
-                    onChange={(e) => setDisbDate(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="disb-payee"
-                  className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1"
-                >
-                  Payee / Vendor / Recipient *
-                </label>
-                <Input
-                  id="disb-payee"
-                  type="text"
-                  required
-                  placeholder="e.g. Huntree Nursery, USPS Douglas, Contractor Name"
-                  value={disbPayee}
-                  onChange={(e) => setDisbPayee(e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="disb-category"
-                    className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1"
-                  >
-                    Accounting Category *
-                  </label>
-                  <select
-                    id="disb-category"
-                    value={disbCategory}
-                    onChange={(e) => setDisbCategory(e.target.value)}
-                    className="w-full rounded-xl border border-border/60 bg-card p-2 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
-                  >
-                    {DISBURSEMENT_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="disb-ref"
-                    className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1"
-                  >
-                    Check # / Receipt Ref
-                  </label>
-                  <Input
-                    id="disb-ref"
-                    type="text"
-                    placeholder="e.g. Check #1042 or Inv-2026"
-                    value={disbRef}
-                    onChange={(e) => setDisbRef(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="disb-description"
-                  className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1"
-                >
-                  Purpose / Itemized Description *
-                </label>
-                <textarea
-                  id="disb-description"
-                  required
-                  rows={2}
-                  placeholder="e.g. Purchase of 45 flats of red geraniums and potting soil for downtown urns."
-                  value={disbDescription}
-                  onChange={(e) => setDisbDescription(e.target.value)}
-                  className="w-full rounded-xl border border-border/60 bg-card p-2.5 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-border">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsRecordingDisbursement(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Recording..." : "Save to Books"}
-                </Button>
-              </div>
-            </form>
           </div>
         </div>
       )}

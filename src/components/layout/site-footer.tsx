@@ -88,6 +88,19 @@ export async function SiteFooter() {
                   </Link>
                 </li>
                 <li>
+                  <Link
+                    href="/tickets-checkout"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Tickets &amp; Admissions
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/gift" className="hover:text-foreground transition-colors">
+                    Gift a Tour Pass
+                  </Link>
+                </li>
+                <li>
                   <Link href="/events" className="hover:text-foreground transition-colors">
                     Club Events Calendar
                   </Link>

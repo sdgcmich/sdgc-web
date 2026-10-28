@@ -2,7 +2,6 @@ import { AdminDues } from "@/features/admin/components/admin-dues";
 import {
   getAdminDuesRecords,
   getAdminTerms,
-  getAdminDisbursements,
   getFinancialLedgerSummary,
 } from "@/features/admin/queries";
 import { requireCapability } from "@/features/auth/authorization";
@@ -18,17 +17,15 @@ interface AdminDuesPageProps {
 export default async function AdminDuesPage({ searchParams }: AdminDuesPageProps) {
   await requireCapability("dues.reconcile", "/admin/dues");
   const params = await searchParams;
-  const [records, terms, disbursements, ledgerSummary] = await Promise.all([
+  const [records, terms, ledgerSummary] = await Promise.all([
     getAdminDuesRecords(),
     getAdminTerms(),
-    getAdminDisbursements(),
     getFinancialLedgerSummary(),
   ]);
   return (
     <AdminDues
       initialRecords={records}
       initialTerms={terms}
-      initialDisbursements={disbursements}
       initialSummary={ledgerSummary}
       initialStatusFilter={params?.status}
     />

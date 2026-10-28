@@ -16,6 +16,17 @@ export interface CreateTicketCheckoutInput {
   eventId?: string;
 }
 
+export interface CreateGiftCouponCheckoutInput {
+  orderReference: string;
+  giftAmountCents: number;
+  purchaserName: string;
+  purchaserEmail: string;
+  recipientName: string;
+  recipientEmail: string;
+  giftMessage?: string;
+  returnPath: string;
+}
+
 export interface StripeConfigStatus {
   isConfigured: boolean;
   isTestMode: boolean;
@@ -231,6 +242,98 @@ export class StripePaymentProvider {
       const message =
         errorData?.error?.message || `Stripe API error: ${response.status} ${response.statusText}`;
       throw new Error(`Stripe Ticket Checkout creation failed: ${message}`);
+    }
+
+    const sessionData = (await response.json()) as { id: string; url: string };
+    return {
+      checkoutUrl: sessionData.url,
+      providerReference: sessionData.id,
+    };
+  }
+
+  /**
+   * Creates a Stripe Checkout Session specifically for buying and gifting event passes / coupons.
+   */
+  async createGiftCouponCheckoutSession(
+    input: CreateGiftCouponCheckoutInput,
+  ): Promise<CheckoutResult> {
+    const status = this.getConfigStatus();
+
+    if (process.env.NODE_ENV !== "production" && !status.isTestMode && status.isConfigured) {
+      throw new Error(
+        "CRITICAL SECURITY REJECTION: Live Stripe keys detected in development/test environment.",
+      );
+    }
+
+    if (!status.isConfigured) {
+      const sessionRef = `cs_test_gift_${crypto.randomBytes(12).toString("hex")}`;
+      return {
+        checkoutUrl: `${input.returnPath}?session_id=${sessionRef}&code=${input.orderReference}&provider=stripe_sandbox_unconfigured`,
+        providerReference: sessionRef,
+      };
+    }
+
+    const secretKey = process.env.STRIPE_SECRET_KEY || "";
+    const params = new URLSearchParams();
+    params.append("mode", "payment");
+    params.append("client_reference_id", input.orderReference);
+    params.append("customer_email", input.purchaserEmail);
+
+    params.append("metadata[type]", "gift_coupon");
+    params.append("metadata[orderReference]", input.orderReference);
+    params.append("metadata[giftAmountCents]", String(input.giftAmountCents));
+    params.append("metadata[purchaserName]", input.purchaserName);
+    params.append("metadata[purchaserEmail]", input.purchaserEmail);
+    params.append("metadata[recipientName]", input.recipientName);
+    params.append("metadata[recipientEmail]", input.recipientEmail);
+    if (input.giftMessage) {
+      params.append("metadata[giftMessage]", input.giftMessage);
+    }
+
+    params.append("line_items[0][price_data][currency]", "usd");
+    params.append("line_items[0][price_data][unit_amount]", String(input.giftAmountCents));
+    params.append(
+      "line_items[0][price_data][product_data][name]",
+      `Saugatuck Douglas Garden Club — Gift Pass Voucher ($${(input.giftAmountCents / 100).toFixed(2)})`,
+    );
+    params.append(
+      "line_items[0][price_data][product_data][description]",
+      `Garden Walk & Event Admission Gift Pass for ${input.recipientName} from ${input.purchaserName}`,
+    );
+    params.append("line_items[0][quantity]", "1");
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
+    const returnUrl =
+      input.returnPath.startsWith("http://") || input.returnPath.startsWith("https://")
+        ? input.returnPath
+        : `${siteUrl}${input.returnPath.startsWith("/") ? "" : "/"}${input.returnPath}`;
+    const separator = returnUrl.includes("?") ? "&" : "?";
+
+    params.append(
+      "success_url",
+      `${returnUrl}${separator}session_id={CHECKOUT_SESSION_ID}&code=${input.orderReference}&payment_status=success`,
+    );
+    params.append(
+      "cancel_url",
+      `${returnUrl}${separator}code=${input.orderReference}&payment_status=cancelled`,
+    );
+
+    const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({}))) as {
+        error?: { message?: string };
+      };
+      const message =
+        errorData?.error?.message || `Stripe API error: ${response.status} ${response.statusText}`;
+      throw new Error(`Stripe Gift Pass Checkout creation failed: ${message}`);
     }
 
     const sessionData = (await response.json()) as { id: string; url: string };

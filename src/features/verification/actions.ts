@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/features/admin/types";
 import type { TicketVerificationResult, MemberVerificationResult } from "./types";
@@ -29,7 +30,7 @@ export async function verifyTicketAction(
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { data: order, error } = await supabase
       .from("ticket_orders")
@@ -183,10 +184,11 @@ export async function gateCheckInTicketAction(
   }
 
   try {
-    const supabase = await createClient();
+    const userClient = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await userClient.auth.getUser();
+    const supabase = createAdminClient();
 
     // Verify order exists
     const { data: order, error: findError } = await supabase
@@ -258,7 +260,7 @@ export async function verifyMemberAction(
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // Extract raw prefix if SDGC-MBR-XXXXXXXX format
     let lookupTerm = cleanInput;

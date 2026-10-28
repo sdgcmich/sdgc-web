@@ -541,6 +541,25 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
         </div>
       </div>
 
+      {/* Gift Pass Banner */}
+      <div className="rounded-2xl border border-primary/20 bg-muted/30 p-4 text-xs text-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <p className="font-semibold text-foreground">
+            Looking to gift tour passes to someone else?
+          </p>
+          <p className="text-muted-foreground">
+            Purchase dedicated advance gift passes ($10, $15, $20, $30, $50) with personalized
+            recipient notes and codes.
+          </p>
+        </div>
+        <Link
+          href={"/gift" as Route}
+          className="shrink-0 inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 py-2 font-semibold transition-colors"
+        >
+          Gift a Pass &rarr;
+        </Link>
+      </div>
+
       {/* Main Grid: Form on Left, Summary on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Form Column */}
@@ -847,6 +866,48 @@ export function TicketsCheckout({ events }: TicketsCheckoutProps) {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Step 4: Payment Method Selection */}
+          <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-xs space-y-4">
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Step 4 &bull; Payment Provider
+            </span>
+            <h2 className="font-serif text-xl font-bold text-foreground">Payment Method</h2>
+            <p className="text-xs text-muted-foreground">
+              Online ticket checkout is secured through Stripe with 256-bit encryption.
+            </p>
+
+            <label
+              htmlFor="checkout-stripe"
+              className="flex items-start gap-3 p-4 rounded-2xl border border-primary bg-primary/5 ring-2 ring-primary/20 cursor-pointer"
+            >
+              <input
+                id="checkout-stripe"
+                type="radio"
+                name="checkoutPaymentMethod"
+                value="stripe"
+                defaultChecked
+                className="mt-1"
+              />
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-foreground flex items-center gap-2">
+                    Stripe Secure Checkout
+                    <span className="rounded-md bg-primary/10 text-primary text-[10px] font-semibold px-2 py-0.5 border border-primary/20">
+                      Default
+                    </span>
+                  </span>
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    Cards &bull; Apple Pay &bull; Google Pay
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  You will be securely redirected to Stripe's encrypted payment page to complete
+                  your order.
+                </p>
+              </div>
+            </label>
           </div>
 
           <button

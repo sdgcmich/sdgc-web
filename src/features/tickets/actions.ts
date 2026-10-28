@@ -813,7 +813,7 @@ export async function validateCouponCodeAction(
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data: coupon, error } = await supabase
       .from("event_coupons")
       .select(
@@ -913,6 +913,13 @@ export async function listAdminCouponsAction(): Promise<ActionResult<TicketCoupo
       max_uses,
       times_used,
       is_active,
+      is_gift,
+      recipient_name,
+      recipient_email,
+      purchaser_name,
+      purchaser_email,
+      gift_message,
+      order_reference,
       created_at,
       events (
         title
@@ -940,6 +947,13 @@ export async function listAdminCouponsAction(): Promise<ActionResult<TicketCoupo
       maxUses: r.max_uses,
       timesUsed: r.times_used,
       isActive: r.is_active,
+      isGift: Boolean(r.is_gift),
+      recipientName: r.recipient_name,
+      recipientEmail: r.recipient_email,
+      purchaserName: r.purchaser_name,
+      purchaserEmail: r.purchaser_email,
+      giftMessage: r.gift_message,
+      orderReference: r.order_reference,
       createdAt: r.created_at,
     };
   });
@@ -948,7 +962,7 @@ export async function listAdminCouponsAction(): Promise<ActionResult<TicketCoupo
 }
 
 /**
- * Create a new coupon code for events.
+ * Create a new coupon code or gift voucher for events.
  */
 export async function createCouponAction(input: {
   code: string;
@@ -959,6 +973,10 @@ export async function createCouponAction(input: {
   validFrom?: string;
   validUntil?: string;
   maxUses?: number;
+  isGift?: boolean;
+  recipientName?: string;
+  recipientEmail?: string;
+  giftMessage?: string;
 }): Promise<ActionResult<TicketCoupon>> {
   const user = await requireCapability("events.manage");
   const cleanCode = input.code.trim().toUpperCase();
@@ -983,6 +1001,10 @@ export async function createCouponAction(input: {
       valid_until: input.validUntil ? new Date(input.validUntil).toISOString() : null,
       max_uses: input.maxUses ? Math.max(1, input.maxUses) : null,
       is_active: true,
+      is_gift: Boolean(input.isGift),
+      recipient_name: input.recipientName?.trim() || null,
+      recipient_email: input.recipientEmail?.trim() || null,
+      gift_message: input.giftMessage?.trim() || null,
     })
     .select("id, code, created_at")
     .single();
@@ -1004,6 +1026,7 @@ export async function createCouponAction(input: {
   });
 
   safeRevalidatePath("/admin/tickets");
+  safeRevalidatePath("/admin/coupons");
   safeRevalidatePath("/tickets-checkout");
 
   return {
@@ -1040,6 +1063,7 @@ export async function toggleCouponActiveAction(
   });
 
   safeRevalidatePath("/admin/tickets");
+  safeRevalidatePath("/admin/coupons");
   safeRevalidatePath("/tickets-checkout");
   return { success: true };
 }
@@ -1064,6 +1088,105 @@ export async function deleteCouponAction(couponId: string): Promise<ActionResult
   });
 
   safeRevalidatePath("/admin/tickets");
+  safeRevalidatePath("/admin/coupons");
   safeRevalidatePath("/tickets-checkout");
   return { success: true };
+}
+
+export interface PurchaseGiftCouponInput {
+  amountDollars: number;
+  purchaserName: string;
+  purchaserEmail: string;
+  recipientName: string;
+  recipientEmail: string;
+  giftMessage?: string;
+  paymentMethod?: "stripe" | "check";
+}
+
+/**
+ * Public action for visitors to buy and gift an event pass or admission credit to someone else.
+ */
+export async function purchaseGiftCouponAction(
+  input: PurchaseGiftCouponInput,
+): Promise<ActionResult<{ checkoutUrl?: string; code: string; isSimulation?: boolean }>> {
+  if (!input.purchaserName.trim() || !input.purchaserEmail.trim()) {
+    return { success: false, error: "Purchaser name and email are required." };
+  }
+  if (!input.recipientName.trim() || !input.recipientEmail.trim()) {
+    return { success: false, error: "Recipient name and email are required." };
+  }
+  if (!input.amountDollars || input.amountDollars < 5) {
+    return { success: false, error: "Minimum gift amount is $5.00." };
+  }
+
+  const currentYear = new Date().getFullYear();
+  const randomSuffix = crypto.randomBytes(3).toString("hex").toUpperCase();
+  const couponCode = `GIFT-${currentYear}-${randomSuffix}`;
+  const amountCents = Math.round(input.amountDollars * 100);
+
+  const isSimulation = isSimulationAllowed();
+  const stripeStatus = stripePaymentProvider.getConfigStatus();
+
+  // If local simulation or offline check requested
+  if (isSimulation || input.paymentMethod === "check" || !stripeStatus.isConfigured) {
+    const supabase = createAdminClient();
+    const { error: insertError } = await supabase.from("event_coupons").insert({
+      code: couponCode,
+      description: `Gift voucher from ${input.purchaserName.trim()} to ${input.recipientName.trim()}`,
+      discount_type: "fixed_amount",
+      discount_value: amountCents,
+      is_active: true,
+      is_gift: true,
+      max_uses: 1,
+      times_used: 0,
+      recipient_name: input.recipientName.trim(),
+      recipient_email: input.recipientEmail.trim(),
+      purchaser_name: input.purchaserName.trim(),
+      purchaser_email: input.purchaserEmail.trim(),
+      gift_message: input.giftMessage?.trim() || null,
+      order_reference: couponCode,
+    });
+
+    if (insertError) {
+      return { success: false, error: `Could not create gift pass: ${insertError.message}` };
+    }
+
+    safeRevalidatePath("/admin/coupons");
+    return {
+      success: true,
+      data: {
+        code: couponCode,
+        isSimulation: true,
+      },
+      message: `Gift pass ${couponCode} created successfully!`,
+    };
+  }
+
+  // Real or sandbox Stripe Checkout flow
+  try {
+    const checkout = await stripePaymentProvider.createGiftCouponCheckoutSession({
+      orderReference: couponCode,
+      giftAmountCents: amountCents,
+      purchaserName: input.purchaserName.trim(),
+      purchaserEmail: input.purchaserEmail.trim(),
+      recipientName: input.recipientName.trim(),
+      recipientEmail: input.recipientEmail.trim(),
+      giftMessage: input.giftMessage?.trim() || undefined,
+      returnPath: "/gift",
+    });
+
+    return {
+      success: true,
+      data: {
+        checkoutUrl: checkout.checkoutUrl,
+        code: couponCode,
+        isSimulation: false,
+      },
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to initiate payment checkout.",
+    };
+  }
 }

@@ -66,6 +66,74 @@ export async function POST(request: NextRequest) {
 
       // Check if this checkout session is for an event ticket order
       if (sessionObj?.metadata?.type === "ticket_order" || sessionObj?.metadata?.orderReference) {
+        if (sessionObj?.metadata?.type === "gift_coupon") {
+          const couponCode = (
+            sessionObj.metadata.orderReference ||
+            sessionObj.metadata.code ||
+            ""
+          ).toUpperCase();
+          const giftAmountCents = parseInt(
+            sessionObj.metadata.giftAmountCents || `${sessionObj.amount_total || 2000}`,
+            10,
+          );
+          const recipientName = sessionObj.metadata.recipientName || null;
+          const recipientEmail = sessionObj.metadata.recipientEmail || null;
+          const purchaserName = sessionObj.metadata.purchaserName || null;
+          const purchaserEmail = sessionObj.metadata.purchaserEmail || null;
+          const giftMessage = sessionObj.metadata.giftMessage || null;
+
+          const { data: existingCoupon } = await supabase
+            .from("event_coupons")
+            .select("id, code")
+            .eq("code", couponCode)
+            .maybeSingle();
+
+          if (!existingCoupon && couponCode) {
+            const { data: insertedCoupon, error: insertError } = await supabase
+              .from("event_coupons")
+              .insert({
+                code: couponCode,
+                description: `Gift voucher from ${purchaserName || "SDGC Supporter"} to ${recipientName || "Friend of SDGC"}`,
+                discount_type: "fixed_amount",
+                discount_value: giftAmountCents,
+                is_active: true,
+                is_gift: true,
+                max_uses: 1,
+                times_used: 0,
+                recipient_name: recipientName,
+                recipient_email: recipientEmail,
+                purchaser_name: purchaserName,
+                purchaser_email: purchaserEmail,
+                gift_message: giftMessage,
+                order_reference: couponCode,
+                stripe_session_id: sessionObj.id,
+              })
+              .select("id")
+              .single();
+
+            if (!insertError && insertedCoupon) {
+              await supabase.from("audit_events").insert({
+                action: "coupon.gift_purchased",
+                entity_type: "event_coupon",
+                entity_id: insertedCoupon.id,
+                details: {
+                  code: couponCode,
+                  giftAmountCents,
+                  recipientEmail,
+                  purchaserEmail,
+                  stripe_session_id: sessionObj.id,
+                },
+              });
+            }
+          }
+
+          return NextResponse.json({
+            received: true,
+            gift_coupon_created: true,
+            code: couponCode,
+          });
+        }
+
         const orderRef = sessionObj.metadata.orderReference;
         const ticketOrderId = sessionObj.metadata.ticketOrderId;
 

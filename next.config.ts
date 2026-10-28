@@ -26,19 +26,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "**.r2.dev",
-      },
-      {
-        protocol: "https",
         hostname: "media.saugatuckdouglasgardenclub.com",
       },
       {
         protocol: "https",
         hostname: "**.saugatuckdouglasgardenclub.com",
-      },
-      {
-        protocol: "https",
-        hostname: "**.cloudflarestorage.com",
       },
       {
         protocol: "https",

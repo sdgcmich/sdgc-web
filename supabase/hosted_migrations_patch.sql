@@ -271,6 +271,28 @@ create policy "Staff with dues.reconcile can delete disbursements"
 grant select, insert, update, delete on public.disbursements to authenticated;
 
 -- ------------------------------------------------------------------------------
--- 5. Reload PostgREST Schema Cache Immediately
+-- 5. Security Hardening & Gift Coupons
+-- ------------------------------------------------------------------------------
+drop policy if exists "Purchasers can view ticket orders by reference" on public.ticket_orders;
+revoke select on table public.ticket_orders from anon;
+
+drop policy if exists "Public can view active coupons" on public.event_coupons;
+revoke select on table public.event_coupons from anon;
+
+alter table public.event_coupons add column if not exists is_gift boolean not null default false;
+alter table public.event_coupons add column if not exists recipient_name text;
+alter table public.event_coupons add column if not exists recipient_email text;
+alter table public.event_coupons add column if not exists purchaser_name text;
+alter table public.event_coupons add column if not exists purchaser_email text;
+alter table public.event_coupons add column if not exists gift_message text;
+alter table public.event_coupons add column if not exists order_reference text;
+alter table public.event_coupons add column if not exists stripe_session_id text;
+
+create index if not exists idx_event_coupons_recipient on public.event_coupons(recipient_email);
+create index if not exists idx_event_coupons_order_reference on public.event_coupons(order_reference);
+create index if not exists idx_event_coupons_is_gift on public.event_coupons(is_gift);
+
+-- ------------------------------------------------------------------------------
+-- 6. Reload PostgREST Schema Cache Immediately
 -- ------------------------------------------------------------------------------
 NOTIFY pgrst, 'reload schema';

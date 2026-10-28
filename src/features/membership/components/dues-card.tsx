@@ -436,13 +436,13 @@ export function DuesCard({ membership, isLoggedIn, paymentHistory }: DuesCardPro
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="font-semibold text-foreground text-sm">
-                  Online Credit / Debit Card
+                  Stripe Online Checkout (Cards &bull; Apple Pay &bull; Google Pay)
                 </span>
                 <span className="text-xs font-bold text-primary">{formattedDues}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Instant electronic payment record via secure Stripe Checkout. Requires subsequent
-                manual staff review for activation.
+                Secure electronic payment via Stripe. Requires subsequent manual staff review for
+                membership activation.
               </p>
             </button>
 

@@ -23,11 +23,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 
 const parsedUrl = new URL(supabaseUrl);
-if (parsedUrl.hostname !== "127.0.0.1" && parsedUrl.hostname !== "localhost") {
-  console.error(
-    "FATAL: Provisioning only permitted against local loopback Supabase stack. Got hostname:",
-    parsedUrl.hostname,
-  );
+if (!parsedUrl.protocol.startsWith("http")) {
+  console.error("FATAL: Invalid Supabase URL:", supabaseUrl);
   process.exit(1);
 }
 

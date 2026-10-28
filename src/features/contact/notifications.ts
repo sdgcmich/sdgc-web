@@ -16,7 +16,7 @@ export interface ContactNotificationPayload {
 
 export interface NotificationDeliveryResult {
   success: boolean;
-  deliveryMethod: "local_capture" | "simulated" | "deduplicated" | "failed" | "resend";
+  deliveryMethod: "local_capture" | "simulated" | "deduplicated" | "failed";
   deduplicationKey: string;
   recipient: string;
   subject: string;
@@ -74,42 +74,7 @@ Message:
 ${payload.messageBody}
 `;
 
-  // 2. Production Resend delivery (if API key is configured)
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const fromAddress =
-        process.env.CONTACT_FROM_EMAIL || "SDGC Website <inquiries@sdgc.redwan.work>";
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: fromAddress,
-          to: [recipient],
-          subject: emailSubject,
-          text: emailText,
-        }),
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (res.ok) {
-        processedNotifications.add(deduplicationKey);
-        return {
-          success: true,
-          deliveryMethod: "resend",
-          deduplicationKey,
-          recipient,
-          subject: emailSubject,
-        };
-      }
-    } catch {
-      // Fall through to local capture or failure reporting
-    }
-  }
-
-  // 3. Local capture delivery (Mailpit)
+  // 2. Local capture delivery (Mailpit) in development / testing
   const mailpitApiUrl = process.env.MAILPIT_API_URL || "http://127.0.0.1:54324";
 
   try {
@@ -120,7 +85,7 @@ ${payload.messageBody}
         From: { Email: "inquiries@sdgc.local", Name: "SDGC Website" },
         To: [{ Email: recipient, Name: "SDGC Staff Inbox" }],
         Subject: emailSubject,
-        Text: `New Contact Submission:\n\nReference: ${payload.reference}\nFrom: ${payload.senderName} <${payload.senderEmail}>\nPhone: ${payload.senderPhone || "None"}\nSender Type: ${payload.senderType || "Not specified"}\nCategory: ${payload.category || "General"}\nSubject: ${payload.subject || "No Subject"}\nAttachment: ${payload.attachmentUrl || "None"}\nDate: ${payload.submittedAt}\n\nMessage:\n${payload.messageBody}\n`,
+        Text: emailText,
       }),
       signal: AbortSignal.timeout(1000), // Fast timeout so tests never hang if Mailpit API is not listening
     });

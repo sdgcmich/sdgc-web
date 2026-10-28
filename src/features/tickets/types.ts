@@ -106,6 +106,13 @@ export interface TicketCoupon {
   maxUses?: number | null;
   timesUsed: number;
   isActive: boolean;
+  isGift?: boolean;
+  recipientName?: string | null;
+  recipientEmail?: string | null;
+  purchaserName?: string | null;
+  purchaserEmail?: string | null;
+  giftMessage?: string | null;
+  orderReference?: string | null;
   createdAt: string;
 }
 
