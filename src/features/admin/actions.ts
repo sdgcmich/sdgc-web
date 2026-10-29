@@ -210,62 +210,6 @@ export async function reconcilePaymentAction(input: {
   return { success: true, message: "Payment reconciled and confirmed" };
 }
 
-// codeql[js/user-controlled-bypass] Step-up re-authentication verifies caller credentials via Supabase Auth
-async function verifyStepUpAuthorization(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  actorEmail: string,
-  credentials: { password?: string; totp?: string },
-): Promise<{ verified: boolean; method?: "password" | "totp"; error?: string }> {
-  const pwd = credentials.password?.trim();
-  const totp = credentials.totp?.trim();
-
-  if (pwd) {
-    // codeql[js/user-controlled-bypass]
-    const { error } = await supabase.auth.signInWithPassword({
-      email: actorEmail,
-      password: pwd,
-    });
-    if (error) {
-      return {
-        verified: false,
-        error: "Step-up authentication failed: Incorrect account password.",
-      };
-    }
-    return { verified: true, method: "password" };
-  }
-
-  if (totp) {
-    // codeql[js/user-controlled-bypass]
-    const { data: factors } = await supabase.auth.mfa.listFactors();
-    const verifiedTotp = factors?.totp?.find((f) => f.status === "verified");
-    if (!verifiedTotp) {
-      return {
-        verified: false,
-        error:
-          "No verified authenticator app enrolled. Please authenticate using your account password.",
-      };
-    }
-
-    const { error: totpErr } = await supabase.auth.mfa.challengeAndVerify({
-      factorId: verifiedTotp.id,
-      code: totp,
-    });
-    if (totpErr) {
-      return {
-        verified: false,
-        error: "Step-up authentication failed: Invalid 6-digit authenticator code.",
-      };
-    }
-    return { verified: true, method: "totp" };
-  }
-
-  return {
-    verified: false,
-    error:
-      "Step-up re-authentication required: Please enter your account password or 6-digit authenticator code to modify staff roles.",
-  };
-}
-
 export async function setUserRolesAction(input: {
   userId: string;
   roles: ("super_admin" | "admin" | "editor" | "treasurer")[];
@@ -324,25 +268,50 @@ export async function setUserRolesAction(input: {
   }
 
   // 2. Sudo / Step-Up Re-Authentication Requirement
-  if (!input.password?.trim() && !input.totp?.trim()) {
+  const pwd = input.password?.trim();
+  if (!pwd) {
     return {
       success: false,
       error:
-        "Step-up re-authentication required: Please enter your account password or 6-digit authenticator code to modify staff roles.",
+        "Step-up re-authentication required: Please enter your administrator account password to modify staff roles.",
     };
   }
 
-  // codeql[js/user-controlled-bypass] Re-authenticates actor using verified Supabase credentials
-  const stepUp = await verifyStepUpAuthorization(supabase, actor.email, {
-    password: input.password,
-    totp: input.totp,
+  const { error: pwdError } = await supabase.auth.signInWithPassword({
+    email: actor.email,
+    password: pwd,
   });
 
-  if (!stepUp.verified) {
+  if (pwdError) {
     return {
       success: false,
-      error: stepUp.error || "Step-up re-authentication failed.",
+      error: "Step-up authentication failed: Incorrect account password.",
     };
+  }
+
+  // If administrator has 2FA (TOTP) enrolled, also require and verify the 6-digit TOTP code
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const verifiedTotp = factors?.totp?.find((f) => f.status === "verified");
+  if (verifiedTotp) {
+    const totp = input.totp?.trim();
+    if (!totp) {
+      return {
+        success: false,
+        error:
+          "Two-factor authentication code required: Please enter your 6-digit authenticator code.",
+      };
+    }
+
+    const { error: totpErr } = await supabase.auth.mfa.challengeAndVerify({
+      factorId: verifiedTotp.id,
+      code: totp,
+    });
+    if (totpErr) {
+      return {
+        success: false,
+        error: "Step-up authentication failed: Invalid 6-digit authenticator code.",
+      };
+    }
   }
 
   // 3. Last Super Admin Protection
@@ -391,7 +360,7 @@ export async function setUserRolesAction(input: {
       details: {
         previous_roles: currentRoles,
         new_roles: input.roles,
-        verified_via: stepUp.method || "password",
+        verified_via: verifiedTotp ? "password+totp" : "password",
       },
     });
   } catch {

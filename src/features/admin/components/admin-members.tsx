@@ -46,7 +46,6 @@ export function AdminMembers({
   const [isStepUpOpen, setIsStepUpOpen] = React.useState(false);
   const [stepUpPassword, setStepUpPassword] = React.useState("");
   const [stepUpTotp, setStepUpTotp] = React.useState("");
-  const [stepUpMethod, setStepUpMethod] = React.useState<"password" | "totp">("password");
   const [stepUpError, setStepUpError] = React.useState<string | null>(null);
 
   // Profile Edit State
@@ -274,12 +273,8 @@ export function AdminMembers({
     e.preventDefault();
     if (!selectedUserForRoles) return;
 
-    if (stepUpMethod === "password" && !stepUpPassword.trim()) {
+    if (!stepUpPassword.trim()) {
       setStepUpError("Please enter your account password to verify.");
-      return;
-    }
-    if (stepUpMethod === "totp" && !stepUpTotp.trim()) {
-      setStepUpError("Please enter your 6-digit authenticator code.");
       return;
     }
 
@@ -289,8 +284,8 @@ export function AdminMembers({
       const res = await setUserRolesAction({
         userId: selectedUserForRoles.userId,
         roles: assignedRoles,
-        password: stepUpMethod === "password" ? stepUpPassword.trim() : undefined,
-        totp: stepUpMethod === "totp" ? stepUpTotp.trim() : undefined,
+        password: stepUpPassword.trim(),
+        totp: stepUpTotp.trim() || undefined,
       });
 
       if (res.success) {
@@ -966,83 +961,44 @@ export function AdminMembers({
               </div>
             </div>
 
-            {/* Sudo Re-Auth Method Selector */}
+            {/* Sudo Re-Auth Credentials */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between border-b border-border pb-2">
-                <span className="text-xs font-bold text-foreground">
-                  Verify Identity to Authorize
+              <div>
+                <Label htmlFor="step-up-pwd" required className="text-xs">
+                  Your Administrator Account Password
+                </Label>
+                <Input
+                  id="step-up-pwd"
+                  type="password"
+                  autoFocus
+                  value={stepUpPassword}
+                  onChange={(e) => setStepUpPassword(e.target.value)}
+                  placeholder="Enter your current password"
+                  className="mt-1"
+                />
+                <span className="text-[11px] text-muted-foreground block mt-1">
+                  Re-enter your credentials to confirm staff elevation or demotion.
                 </span>
-                <div className="flex gap-1 text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStepUpMethod("password");
-                      setStepUpError(null);
-                    }}
-                    className={`px-2 py-0.5 rounded font-medium cursor-pointer ${
-                      stepUpMethod === "password"
-                        ? "bg-primary text-primary-foreground font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Password
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStepUpMethod("totp");
-                      setStepUpError(null);
-                    }}
-                    className={`px-2 py-0.5 rounded font-medium cursor-pointer ${
-                      stepUpMethod === "totp"
-                        ? "bg-primary text-primary-foreground font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Authenticator TOTP
-                  </button>
-                </div>
               </div>
 
-              {stepUpMethod === "password" ? (
-                <div>
-                  <Label htmlFor="step-up-pwd" required className="text-xs">
-                    Your Administrator Account Password
-                  </Label>
-                  <Input
-                    id="step-up-pwd"
-                    type="password"
-                    autoFocus
-                    value={stepUpPassword}
-                    onChange={(e) => setStepUpPassword(e.target.value)}
-                    placeholder="Enter your current password"
-                    className="mt-1"
-                  />
-                  <span className="text-[11px] text-muted-foreground block mt-1">
-                    Re-enter your credentials to confirm staff elevation or demotion.
-                  </span>
-                </div>
-              ) : (
-                <div>
-                  <Label htmlFor="step-up-totp" required className="text-xs">
-                    6-Digit Authenticator App Code
-                  </Label>
-                  <Input
-                    id="step-up-totp"
-                    type="text"
-                    inputMode="numeric"
-                    autoFocus
-                    maxLength={6}
-                    value={stepUpTotp}
-                    onChange={(e) => setStepUpTotp(e.target.value.replace(/\D/g, ""))}
-                    placeholder="123456"
-                    className="mt-1 font-mono tracking-widest text-center text-lg"
-                  />
-                  <span className="text-[11px] text-muted-foreground block mt-1">
-                    Enter the current 6-digit TOTP code from Google Authenticator or your 2FA app.
-                  </span>
-                </div>
-              )}
+              <div>
+                <Label htmlFor="step-up-totp" className="text-xs">
+                  6-Digit Authenticator Code (If 2FA enrolled)
+                </Label>
+                <Input
+                  id="step-up-totp"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={stepUpTotp}
+                  onChange={(e) => setStepUpTotp(e.target.value.replace(/\D/g, ""))}
+                  placeholder="123456"
+                  className="mt-1 font-mono tracking-widest text-center text-lg"
+                />
+                <span className="text-[11px] text-muted-foreground block mt-1">
+                  Required only if your administrator account has two-factor authentication enabled.
+                </span>
+              </div>
 
               {stepUpError && (
                 <div
