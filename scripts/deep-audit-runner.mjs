@@ -106,7 +106,9 @@ async function evaluatePage(page, vp, pathStr, slug, category, auditReport) {
     // Collect SEO info (desktop only to avoid duplication)
     if (vp.name === "desktop" && category === "public") {
       const seo = await page.evaluate(() => {
-        const h1s = Array.from(document.querySelectorAll("h1")).map((h) => h.innerText.trim());
+        const h1s = Array.from(document.querySelectorAll("h1")).map(
+          (h) => h.textContent?.trim() || "",
+        );
         const metaDesc =
           document.querySelector('meta[name="description"]')?.getAttribute("content") || null;
         const ogTitle =

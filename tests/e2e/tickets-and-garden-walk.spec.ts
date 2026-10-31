@@ -30,7 +30,7 @@ test.describe("Phase 3: Garden Walk & Ticket Management Module E2E", () => {
 
     // 4. Assert Confirmation Screen
     await expect(page.locator("#order-reference-code")).toBeVisible({ timeout: 15_000 });
-    const orderRef = await page.locator("#order-reference-code").innerText();
+    const orderRef = (await page.locator("#order-reference-code").textContent())?.trim();
     expect(orderRef).toMatch(/^SDGC-TKT-202[67]-[A-F0-9]{6}$/);
 
     await expect(page.getByText("Sarah Jenkins")).toBeVisible();

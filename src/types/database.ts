@@ -449,7 +449,7 @@ isOneToOne: false
           Views: {
             "member_directory": {
                   Row: {
-                    "avatar_url": string | null,"city": string | null,"first_name": string | null,"gardening_interests": string | null,"id": string | null,"interests_experience": string | null,"is_master_gardener": boolean | null,"last_name": string | null,"phone": string | null,"project_interests": Json | null,"secondary_phone": string | null,"state": string | null,"username": string | null,"volunteer_experience": string | null
+                    "avatar_url": string | null,"city": string | null,"first_name": string,"gardening_interests": string | null,"id": string,"interests_experience": string | null,"is_master_gardener": boolean,"last_name": string,"phone": string | null,"project_interests": Json | null,"secondary_phone": string | null,"state": string | null,"username": string,"volunteer_experience": string | null
                   }
                   ComputedFields: never
                   Insert: {
