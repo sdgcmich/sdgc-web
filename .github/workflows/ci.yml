@@ -4,88 +4,134 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  frontend:
+  repository-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      NEXT_TELEMETRY_DISABLED: "1"
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      - run: npm run check
-      - run: npm audit --omit=dev --audit-level=high
-      - run: npm run build
+      - name: Exercise fail-closed policy tests
+        run: node --test scripts/ci-contract.test.mjs
+      - name: Check migrations, tracked secrets, local reset and action pins
+        run: node scripts/ci-contract.mjs repository
 
-  database:
+  frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - name: Detect application migrations
-        id: schema
-        shell: bash
-        run: |
-          if find supabase/migrations -maxdepth 1 -name '*.sql' -print -quit | grep -q .; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "No application migrations yet. Database gates activate in Phase 3."
-          fi
+      - name: Formatting, lint, types and unit tests
+        run: npm run check
+      - name: Runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Development and runtime dependencies
+        run: npm audit --audit-level=high
+      - name: Production compilation, not a deployment
+        run: npm run build
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
       - run: npm run db:start
-        if: steps.schema.outputs.present == 'true'
       - run: npm run db:env
-        if: steps.schema.outputs.present == 'true'
-      - run: npm run db:reset
-        if: steps.schema.outputs.present == 'true'
+      - name: Deny remote endpoints and external-service credentials before writes
+        run: node scripts/ci-contract.mjs local-env
+      - name: Reset disposable runner database only
+        run: npm run db:reset
       - run: npm run db:provision
-        if: steps.schema.outputs.present == 'true'
       - run: npm run db:lint
-        if: steps.schema.outputs.present == 'true'
       - run: npm run db:test
-        if: steps.schema.outputs.present == 'true'
       - run: npm run db:types
-        if: steps.schema.outputs.present == 'true'
       - name: Verify committed database types
-        if: steps.schema.outputs.present == 'true'
         run: |
           git ls-files --error-unmatch src/types/database.ts
           git diff --exit-code -- src/types/database.ts
       - run: npm run test:integration
-        if: steps.schema.outputs.present == 'true'
       - run: npm run build
-        if: steps.schema.outputs.present == 'true'
       - run: npx playwright install --with-deps chromium
-        if: steps.schema.outputs.present == 'true'
-      - run: npm run test:e2e
-        if: steps.schema.outputs.present == 'true'
+      - name: Prepare evidence directory
+        run: mkdir -p artifacts
+      - name: Existing browser suite, including its documented optional exclusions
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/existing-browser.json
+        run: npx playwright test --grep-invert '@quality-contract' --retries=0 --reporter=line,json
+      - name: Required responsive, accessibility and SEO contract
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/quality-browser.json
+        run: npx playwright test tests/e2e/quality-contract.spec.ts --project=chromium --project=mobile --retries=0 --reporter=line,json --output=test-results/quality
+      - name: Reject empty, skipped, flaky or partial quality runs
+        run: node scripts/ci-contract.mjs browser-report artifacts/quality-browser.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: failure() && steps.schema.outputs.present == 'true'
+        if: always()
         with:
-          name: browser-failure-evidence
+          name: isolated-test-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            playwright-report/
+            artifacts/*browser.json
             test-results/
+            playwright-report/
+          if-no-files-found: warn
           retention-days: 7
-      - name: Stop this CI stack
-        if: always() && steps.schema.outputs.present == 'true'
+      - name: Stop this runner's local stack
+        if: always()
         run: npm run db:stop
+
+  quality-gate:
+    if: always()
+    needs: [repository-contract, frontend, database]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Bind CI evidence to source head, tested merge and tree
+        env:
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          JOB_RESULTS: '{"repository-contract":"${{ needs.repository-contract.result }}","frontend":"${{ needs.frontend.result }}","database":"${{ needs.database.result }}"}'
+        run: node scripts/ci-contract.mjs receipt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: ci-receipt-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/ci-receipt.json
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,12 @@
+# Review routing only. Repository rules must require code-owner approval.
+# A PR author cannot approve their own PR. A capable independent reviewer is required.
+* @redwan-cse @sdgcmich
+/.github/ @redwan-cse @sdgcmich
+/.agent/ @redwan-cse @sdgcmich
+/scripts/ @redwan-cse @sdgcmich
+/supabase/ @redwan-cse @sdgcmich
+/src/features/auth/ @redwan-cse @sdgcmich
+/src/features/payments/ @redwan-cse @sdgcmich
+/src/features/tickets/ @redwan-cse @sdgcmich
+/src/features/verification/ @redwan-cse @sdgcmich
+/src/app/api/ @redwan-cse @sdgcmich
